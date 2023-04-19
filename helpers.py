@@ -5,11 +5,12 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from scipy.spatial.transform import Rotation
 from numpy.linalg import eig
+import random
 
 def apply_initial_translation_and_rotation(inputArr):
     # Define rotation matrix for 5 degree rotation around y-axis
     #Test 1:
-    # r = Rotation.from_euler('y', 0, degrees=True)
+    r = Rotation.from_euler('y', 50, degrees=True)
     #Test 2:
     # r = Rotation.from_euler('x', 45, degrees=True)
     # #Test 3:
@@ -19,7 +20,7 @@ def apply_initial_translation_and_rotation(inputArr):
     # #Test 5:
     # r = Rotation.from_euler('y', -60, degrees=True)
     # #Test 6:
-    r = Rotation.from_euler('z', 30, degrees=True)
+    # r = Rotation.from_euler('z', 30, degrees=True)
     # #Test 7:
     # r = Rotation.from_euler('zy', [45, 30], degrees=True)
     # #Test 8:
@@ -30,7 +31,7 @@ def apply_initial_translation_and_rotation(inputArr):
 
     # Define translation vector
     #test 1:
-    # translation = np.array([0, 0, 0])
+    translation = np.array([0, 0, 0])
     #test 2:
     # translation = np.array([1.2, -0.5, 2.3])
     # #test 3:
@@ -51,14 +52,14 @@ def apply_initial_translation_and_rotation(inputArr):
 
 def closest_point_on_cylinder(point, height, rad, origin):
     #point is at x==0 and y==0, arbitrary height
-    if point[0] == 0 and point[1] == 0:
-        if point[2]>=(height/2):
-            z = height/2
-        # elif point[2]<(-height/2):
-        #     z = -height/2
-        else:
-            z = -height/2
-        return [point[0],point[1],z]
+    # if point[0] == 0 and point[1] == 0:
+    #     if point[2]>=(height/2):
+    #         z = height/2
+    #     # elif point[2]<(-height/2):
+    #     #     z = -height/2
+    #     else:
+    #         z = -height/2
+    #     return [point[0],point[1],z]
     # if point[0] == 0 and point[1] == 0 and point[2] == 0:
     #     return [point[0],point[1], point[2]]
 
@@ -153,12 +154,11 @@ def point_cloud_centroid_p(point_cloud): #computes centroid/mean/center of mass 
         return [0,0,0]
 
     num_points = 0
-    for row in arr:
-        for point in row:
-            sum_x += point[0]
-            sum_y += point[1]
-            sum_z += point[2]
-            num_points+=1
+    for point in arr:
+        sum_x += point[0]
+        sum_y += point[1]
+        sum_z += point[2]
+        num_points+=1
     
     avg_x = sum_x/num_points
     avg_y = sum_y/num_points
@@ -176,12 +176,11 @@ def point_cloud_centroid_q(point_cloud): #computes centroid/mean/center of mass 
         return [0,0,0]
 
     num_points = 0
-    for row in arr:
-        for point in row:
-            sum_x += point[0]
-            sum_y += point[1]
-            sum_z += point[2]
-            num_points+=1
+    for point in arr:
+        sum_x += point[0]
+        sum_y += point[1]
+        sum_z += point[2]
+        num_points+=1
     
     avg_x = sum_x/num_points
     avg_y = sum_y/num_points
@@ -211,33 +210,33 @@ def calc_b(q_centroid, p_centroid, q, q_star):
     retval = np.array(q_centroid) - np.array(vect)
     return retval
 
-def createMatchDictionary(arr1, matchDict): #creates the match dictionary, which associates each point in arr1 to the point closest to in arr2
-    for i in range(arr1.shape[0]):
-        for j in range(arr1.shape[1]):
-            matchDict[tuple(arr1[i][j])] = None
+def createMatchDictionary(point_cloud_p, matchDict): #creates the match dictionary, which associates each point in arr1 to the point closest to in arr2
+    # for i, row in enumerate(point_cloud_p):
+    #     for j, point_p in enumerate(row):
+    #         matchDict[tuple(point_p)] = None
+    for point in point_cloud_p:
+        matchDict[tuple(point)] = None
 
 def match(point_cloud_p, matchDict): #matches each of the points in one array to its closest corresponding point in the other array
     createMatchDictionary(point_cloud_p, matchDict)
-    for row in point_cloud_p:
-        for point_p in row:
-            point_q = tuple(closest_point_on_cylinder(point_p, 12, 0.87/2, [0, 0, 0.87/2]))
-            point_p = tuple(point_p)
-            matchDict[point_p] = point_q
+    for point_p in point_cloud_p:
+        point_q = tuple(closest_point_on_cylinder(point_p, 12, 0.87/2, [0, 0, 12/2]))
+        point_p = tuple(point_p)
+        matchDict[point_p] = point_q
 
 def error(point_cloud_p, point_cloud_q, b, q, matchDict): 
     tot = 0
     q_star = quat_conjugate(q)
-    for row in point_cloud_p:
-        for point_p in row:
-            point_p = tuple(point_p)
-            point_q = matchDict[point_p]
-            Rp_i_left = quat_mult(q, point_p)
-            Rp_i_right = quat_mult(Rp_i_left, q_star)
-            Rp_i = Rp_i_right
-            Rp_i = extract_vect_from_quat(Rp_i)
-            curr = Rp_i + b - point_q
-            norm_squared = (math.sqrt(curr[0]**2 + curr[1]**2 + curr[2]**2))**2
-            tot+=norm_squared
+    for point_p in point_cloud_p:
+        point_p = tuple(point_p)
+        point_q = matchDict[point_p]
+        Rp_i_left = quat_mult(q, point_p)
+        Rp_i_right = quat_mult(Rp_i_left, q_star)
+        Rp_i = Rp_i_right
+        Rp_i = extract_vect_from_quat(Rp_i)
+        curr = Rp_i + b - point_q
+        norm_squared = (math.sqrt(curr[0]**2 + curr[1]**2 + curr[2]**2))**2
+        tot+=norm_squared
     return tot
 
 def is_point_on_cyl(point, rad, height):
@@ -245,6 +244,41 @@ def is_point_on_cyl(point, rad, height):
         return True
     else:
         return False
+
+def add_noise(point_cloud_p):
+    for i, row in enumerate(point_cloud_p):
+        for j, point_p in enumerate(row):
+                noise_x = np.random.normal(0,1,1)
+                noise_y = np.random.normal(0,1,1)
+                noise_z = np.random.normal(0,1,1)
+                point_p_x = point_p[0] + noise_x
+                point_p_y = point_p[1] + noise_y
+                point_p_z = point_p[2] + noise_z
+                # point_p = [point_p_x, point_p_y, point_p_z]
+                point_cloud_p[i][j][0] = point_p_x
+                point_cloud_p[i][j][1] = point_p_y
+                point_cloud_p[i][j][2] = point_p_z
+    return point_cloud_p
+
+def is_negative():
+    rand_int = random.randint(0, 1)
+    rand_sign = -1 if rand_int == 0 else 1
+    return rand_sign
+
+def generate_point_cloud_p(r, height): #cylinder point cloud
+    # generate 100 points on the cylinder
+    points = []
+    num_points = 100
+
+    for i in range(num_points):
+        point = []
+        x = random.uniform(-0.435, 0.435)
+        sign_y = is_negative()
+        y = (math.sqrt(r**2-x**2)) * sign_y
+        z = random.uniform(-height/2, height/2)
+        point = [x,y,z]
+        points.append(point)
+    return points
 
 def plot(point_cloud_p):
     fig = plt.figure()
@@ -257,11 +291,10 @@ def plot(point_cloud_p):
     point_cloud_p_x = []
     point_cloud_p_y = []
     point_cloud_p_z = []
-    for row in point_cloud_p:
-        for point_p in row:
-            point_cloud_p_x.append(point_p[0])
-            point_cloud_p_y.append(point_p[1])
-            point_cloud_p_z.append(point_p[2])
+    for point_p in point_cloud_p:
+        point_cloud_p_x.append(point_p[0])
+        point_cloud_p_y.append(point_p[1])
+        point_cloud_p_z.append(point_p[2])
 
     # Define the cylinder height and radius
     h = 12
