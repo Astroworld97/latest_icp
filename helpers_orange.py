@@ -14,8 +14,7 @@ def create_random_quat():
     # j_hat = random.randint(1, 10)
     # k_hat = random.randint(1, 10)
     # return [real_component, i_hat, j_hat, k_hat]
-    # return [0.707, 0, 0.707, 0] #90 deg rotation about y 
-    return [-0.8733046, -0.4871745, 0, 0] #45 deg rotation about x
+    return [0.707, 0, 0.707, 0] #90 deg rotation
 
 def create_random_translation_vector():
     random.seed(14)
@@ -43,30 +42,32 @@ def apply_initial_translation_and_rotation(point_cloud): #buggy: only applies tr
     quat_star = quat_conjugate(quat)
     p_centroid = point_cloud_centroid_p(point_cloud)
     translation_vector = create_random_translation_vector()
-    dummy_q_centroid = create_random_centroid_vector()
+    
+    #just translation
+    # for i in range(len(point_cloud)):
+    #     point = point_cloud[i]
+    #     moved_point = [point[0] + translation_vector[0], point[1] + translation_vector[1], point[2] + translation_vector[2]]#
+    #     point_cloud[i] = moved_point
 
-    # left = quat_mult(quat, p_centroid)
-    # right = quat_mult(left, quat_star)
-    # Rp = right
-    # Rp = [Rp[1], Rp[2], Rp[3]]
-    # b = [dummy_q_centroid[0]-Rp[0], dummy_q_centroid[1]-Rp[1], dummy_q_centroid[2]-Rp[2]]
+    #translation and rotation
     for i in range(len(point_cloud)):
         point = point_cloud[i]
+        is_orange = point[3]
+        point = [point[0],point[1],point[2]]
         left = quat_mult(quat, point) #
         right = quat_mult(left, quat_star) #
         rotation = right #
-        moved_point = [rotation[1] + translation_vector[0], rotation[2] + translation_vector[1], rotation[3] + translation_vector[2]]#
-        # moved_point = [point[0] + translation_vector[0], point[1] + translation_vector[1], point[2] + translation_vector[2]]#
+        moved_point = [rotation[1] + translation_vector[0], rotation[2] + translation_vector[1], rotation[3] + translation_vector[2], is_orange]#
         point_cloud[i] = moved_point
     return point_cloud
     
 
 def closest_point_on_cylinder(point, height, rad, origin):
     #point is at arbitrary x, y, and z
-    if point[2]>=(height):
-        z = height
-    elif point[2]<=0:
-        z = 0
+    if point[2]>=(height/2):
+        z = height/2
+    elif point[2]<=(-height/2):
+        z = -height/2
     else:
         z = point[2]
 
@@ -204,7 +205,21 @@ def createMatchDictionary(point_cloud_p, matchDict): #creates the match dictiona
     for point in point_cloud_p:
         matchDict[tuple(point)] = None
 
-def match(point_cloud_p, matchDict, q, it, q_centroid): #matches each of the points in one array to its closest corresponding point in the other array
+def distance(p1, p2):
+    distance = math.sqrt((p2[0] - p1[0])**2 + (p2[1] - p1[1])**2 + (p2[2] - p1[2])**2)
+    return distance
+
+def minDistPoint(point_p, point_cloud_q):
+    point_q = []
+    minDist = float('inf')
+    for i in point_cloud_q:
+        dist = distance(point_p, i)
+        if dist<minDist:
+            minDist = dist
+            point_q = i
+    return point_q
+
+def match(point_cloud_p, matchDict, q, it, q_centroid, point_cloud_q): #matches each of the points in one array to its closest corresponding point in the other array
     if it>0:
             matchDict.clear()
     for i, point_p in enumerate(point_cloud_p):
@@ -218,6 +233,7 @@ def match(point_cloud_p, matchDict, q, it, q_centroid): #matches each of the poi
     #         point_p = [Rp[0]+q_centroid[0], Rp[1]+q_centroid[1], Rp[2]+q_centroid[2]]
     #         point_cloud_p[i] = point_p
         point_q = tuple(closest_point_on_cylinder(point_p, 12, 0.87/2, [0, 0, 12/2]))
+        # point_q = minDistPoint(point_p, point_cloud_q)
         point_p = tuple(point_p)
         matchDict[point_p] = point_q
 
@@ -226,8 +242,7 @@ def error(point_cloud_p, point_cloud_q, b, q, matchDict):
     q_star = quat_conjugate(q)
     for point_p in point_cloud_p:
         point_p = tuple(point_p)
-        # point_q = matchDict[point_p]
-        point_q = closest_point_on_cylinder(point_p, 12, .435, [0, 0, 12/2])
+        point_q = matchDict[point_p]
         Rp_i_left = quat_mult(q, point_p)
         Rp_i_right = quat_mult(Rp_i_left, q_star)
         Rp_i = Rp_i_right
@@ -264,10 +279,6 @@ def is_negative():
     rand_sign = -1 if rand_int == 0 else 1
     return rand_sign
 
-# def shift(point_cloud):
-#     for i in range(len(point_cloud)):
-
-
 def generate_point_cloud_p(r, h): #cylinder point cloud: r = radius; h = height
     # generate 100 points on the cylinder
     points = []
@@ -282,6 +293,18 @@ def generate_point_cloud_p(r, h): #cylinder point cloud: r = radius; h = height
         point = [x,y,z]
         points.append(point)
     return points
+
+def assign_color_orange(point_cloud):
+    zeros_col = np.zeros((100, 1))
+    point_cloud = np.concatenate((point_cloud, zeros_col), axis=1)
+    for i in range(len(point_cloud)):
+        point = point_cloud[i]
+        if point[0]>=0 and point[0]<=.435:
+            point[3] = 1
+        else:
+            point[3] = 0
+        # point_cloud[i] = point
+    return point_cloud
 
 def plot_single_point_cloud(point_cloud_p):
     fig = plt.figure()
@@ -341,6 +364,8 @@ def plot_two_point_clouds(point_cloud_p, point_cloud_p_moved):
 
     # Show the plot
     plt.show()
+
+# def straightener()
 
 def plot(point_cloud_p):
     fig = plt.figure()

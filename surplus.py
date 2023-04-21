@@ -337,3 +337,21 @@ point_cloud_p[i] = point_p
     # if abs(p_centroid[0] - q_centroid[0]) < 0.001 and abs(p_centroid[1] - q_centroid[1]) < 0.001 and abs(p_centroid[2] - q_centroid[2]) < 0.001:
         #     point_p = [Rp[0], Rp[1], Rp[2]]
         # else:
+
+    # dummy_q_centroid = create_random_centroid_vector()
+
+    # left = quat_mult(quat, p_centroid)
+    # right = quat_mult(left, quat_star)
+    # Rp = right
+    # Rp = [Rp[1], Rp[2], Rp[3]]
+    # b = [dummy_q_centroid[0]-Rp[0], dummy_q_centroid[1]-Rp[1], dummy_q_centroid[2]-Rp[2]]
+
+    # if abs(p_centroid[0] - q_centroid[0]) < 0.001 and abs(p_centroid[1] - q_centroid[1]) < 0.001 and abs(p_centroid[2] - q_centroid[2]) < 0.001:
+        #     point_p = [Rp[0], Rp[1], Rp[2]]
+        # else:
+
+    # for i, point_p in enumerate(point_cloud_p):
+#     point_p = tuple(point_p)
+#     point_q = closest_point_on_cylinder(point_p, 12, .435, [0, 0, 12/2])
+#     point_p = point_q
+#     point_cloud_p[i] = point_p
