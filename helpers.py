@@ -9,16 +9,18 @@ import random
 
 def create_random_quat():
     # random.seed(22)
-    # real_component = random.randint(1, 10)
-    # i_hat = random.randint(1, 10)
-    # j_hat = random.randint(1, 10)
-    # k_hat = random.randint(1, 10)
-    # return [real_component, i_hat, j_hat, k_hat]
+    real_component = random.randint(1, 10)
+    i_hat = random.randint(1, 10)
+    j_hat = random.randint(1, 10)
+    k_hat = random.randint(1, 10)
+    return [real_component, i_hat, j_hat, k_hat]
+    # return [-0.7240972, 0, 0, -0.6896979] #234 deg rotation about z 
     # return [0.707, 0, 0.707, 0] #90 deg rotation about y 
-    return [-0.8733046, -0.4871745, 0, 0] #45 deg rotation about x
+    # return [0.707, 0, 0.707, 0] #90 deg rotation about y 
+    # return [-0.8733046, -0.4871745, 0, 0] #45 deg rotation about x
 
 def create_random_translation_vector():
-    random.seed(14)
+    # random.seed(14)
     i_hat = random.randint(1, 5)
     j_hat = random.randint(1, 5)
     k_hat = random.randint(1, 5)
@@ -245,18 +247,18 @@ def is_point_on_cyl(point, rad, height):
         return False
 
 def add_noise(point_cloud_p):
-    for i, row in enumerate(point_cloud_p):
-        for j, point_p in enumerate(row):
-                noise_x = np.random.normal(0,1,1)
-                noise_y = np.random.normal(0,1,1)
-                noise_z = np.random.normal(0,1,1)
-                point_p_x = point_p[0] + noise_x
-                point_p_y = point_p[1] + noise_y
-                point_p_z = point_p[2] + noise_z
-                # point_p = [point_p_x, point_p_y, point_p_z]
-                point_cloud_p[i][j][0] = point_p_x
-                point_cloud_p[i][j][1] = point_p_y
-                point_cloud_p[i][j][2] = point_p_z
+    for i, point_p in enumerate(point_cloud_p):
+        #The first argument to numpy.random.normal is the mean of the distribution (in this case, 0), the second argument is the standard deviation (in this case, 1), and the third argument is the size of the output array (in this case, 1).
+        noise_x = np.random.normal(0,0.01,1)
+        noise_y = np.random.normal(0,0.01,1)
+        noise_z = np.random.normal(0,0.01,1)
+        point_p_x = point_p[0] + noise_x
+        point_p_y = point_p[1] + noise_y
+        point_p_z = point_p[2] + noise_z
+        # point_p = [point_p_x, point_p_y, point_p_z]
+        point_cloud_p[i][0] = point_p_x
+        point_cloud_p[i][1] = point_p_y
+        point_cloud_p[i][2] = point_p_z
     return point_cloud_p
 
 def is_negative():

@@ -355,3 +355,6 @@ point_cloud_p[i] = point_p
 #     point_q = closest_point_on_cylinder(point_p, 12, .435, [0, 0, 12/2])
 #     point_p = point_q
 #     point_cloud_p[i] = point_p
+
+# plot_single_point_cloud(point_cloud_p)
+# plot_single_point_cloud(point_cloud_q)

@@ -20,9 +20,7 @@ r = .435 #.87/2
 point_cloud_q = np.array(generate_point_cloud_p(r, h))
 copy = point_cloud_q.copy()
 point_cloud_p = apply_initial_translation_and_rotation(copy)
-# point_cloud_p = add_noise(point_cloud_p)
-# plot_single_point_cloud(point_cloud_p)
-# plot_single_point_cloud(point_cloud_q)
+point_cloud_p = add_noise(point_cloud_p)
 plot_two_point_clouds(point_cloud_p, point_cloud_q)
 M = np.zeros((4, 4)) 
 b = 0
@@ -62,6 +60,7 @@ for i in range(maxIterations):
         Rp = [right_curr[1],right_curr[2], right_curr[3]]
         point_p = [Rp[0]+b[0], Rp[1]+b[1], Rp[2]+b[2]]
         point_cloud_p[i] = point_p
+    # plot(point_cloud_p)
     
 for i, point_p in enumerate(point_cloud_p):
     point_p = tuple(point_p)
@@ -69,8 +68,8 @@ for i, point_p in enumerate(point_cloud_p):
     point_p = point_q
     point_cloud_p[i] = point_p
 
-print(p_centroid)
-print(q_centroid)
 err = error(point_cloud_p, point_cloud_q, b, q, matchDict)
 print(err)
+print(p_centroid)
+print(q_centroid)
 plot(point_cloud_p)
