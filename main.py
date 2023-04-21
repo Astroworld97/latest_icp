@@ -9,61 +9,39 @@ from helpers import *
 
 #main
 #section 1: define constants and data structures
-maxIterations = 1000
+maxIterations = 10000
 tolerance = 0.001
 matchDict = {}
 # Define the cylinder height and radius
 h = 12
-r = .87/2
+r = .435 #.87/2
 
 #section 2: define arrays (aka point clouds) and initialize dictionaries
-# point_cloud_p_1 = np.array([[[ 10,   5,  20],
-#         [ 15,  20,  10],
-#         [  5,  10,  15],
-#         [ 20,  15,   5]],
-
-#        [[ 20,  10,  15],
-#         [  5,  15,  20],
-#         [ 15,   5,  10],
-#         [ 10,  20,   5]],
-
-#        [[ 10,  15,   5],
-#         [ 20,   5,  10],
-#         [  5,  20,  15],
-#         [ 15,  10,  20]],
-
-#        [[ 15,  10,  30],
-#         [ 10,  25,   5],
-#         [ 20,   5,  15],
-#         [  5,  20,  10]]])
-
-point_cloud_p = np.array(generate_point_cloud_p(r, h))
-print(point_cloud_p.shape)
-
-point_cloud_p = apply_initial_translation_and_rotation(point_cloud_p)
+point_cloud_q = np.array(generate_point_cloud_p(r, h))
+copy = point_cloud_q.copy()
+point_cloud_p = apply_initial_translation_and_rotation(copy)
 # point_cloud_p = add_noise(point_cloud_p)
-match(point_cloud_p, matchDict)
-point_cloud_q = np.array(list((matchDict.values())))
-point_cloud_q = point_cloud_q.reshape(point_cloud_p.shape)
-
+# plot_single_point_cloud(point_cloud_p)
+# plot_single_point_cloud(point_cloud_q)
+# plot_two_point_clouds(point_cloud_p, point_cloud_q)
 M = np.zeros((4, 4)) 
 b = 0
 q = [0,0,0,0] #aka quat
+q_centroid = [0,0,6]
+createMatchDictionary(point_cloud_p, matchDict)
 
 # #section 3: iterate
 for i in range(maxIterations):
 
-    match(point_cloud_p, matchDict) #fill the matchDict and the distDict with the current matches
+    match(point_cloud_p, matchDict, q, i, q_centroid) #fill the matchDict and the distDict with the current matches
 
     if(i>0): #only check for error after the 0th loop
         err = error(point_cloud_p, point_cloud_q, b, q, matchDict)
         print(err)
         if err<tolerance:
             break
-        # print(point_cloud_p)
 
     p_centroid = point_cloud_centroid_p(point_cloud_p)
-    q_centroid = point_cloud_centroid_q(point_cloud_q)
 
     for point_p in point_cloud_p:
         point_p = tuple(point_p)
@@ -77,14 +55,17 @@ for i in range(maxIterations):
 
     q = calc_q(M) #aka quat
     q_star = quat_conjugate(q) #conjugate of q, aka quat
-
     b = calc_b(q_centroid, p_centroid, q, q_star)
     for i, point_p in enumerate(point_cloud_p):
-        # if is_point_on_cyl(point_p, r, h):
-        #     continue
+        left_curr = quat_mult(q, point_p)
+        right_curr = quat_mult(left_curr, q_star)
+        Rp = [right_curr[1],right_curr[2], right_curr[3]]
+        # if abs(p_centroid[0] - q_centroid[0]) < 0.001 and abs(p_centroid[1] - q_centroid[1]) < 0.001 and abs(p_centroid[2] - q_centroid[2]) < 0.001:
+        #     point_p = [Rp[0], Rp[1], Rp[2]]
         # else:
-        point_p = point_p.astype(float)
-        point_p += b
+        point_p = [Rp[0]+b[0], Rp[1]+b[1], Rp[2]+b[2]]
         point_cloud_p[i] = point_p
-    
-    plot(point_cloud_p)
+    print("")
+print(p_centroid)
+print(q_centroid)
+plot(point_cloud_p)

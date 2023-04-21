@@ -7,72 +7,59 @@ from scipy.spatial.transform import Rotation
 from numpy.linalg import eig
 import random
 
-def apply_initial_translation_and_rotation(inputArr):
-    # Define rotation matrix for 5 degree rotation around y-axis
-    #Test 1:
-    r = Rotation.from_euler('y', 50, degrees=True)
-    #Test 2:
-    # r = Rotation.from_euler('x', 45, degrees=True)
-    # #Test 3:
-    # r = Rotation.from_euler('z', 90, degrees=True)
-    # #Test 4:
-    # r = Rotation.from_euler('x', -180, degrees=True)
-    # #Test 5:
-    # r = Rotation.from_euler('y', -60, degrees=True)
-    # #Test 6:
-    # r = Rotation.from_euler('z', 30, degrees=True)
-    # #Test 7:
-    # r = Rotation.from_euler('zy', [45, 30], degrees=True)
-    # #Test 8:
-    # r = Rotation.from_euler('xz', [90, 45], degrees=True)
-    # #Test 9:
-    # r = Rotation.from_euler('yx', [60, 90], degrees=True)
-    rot_matrix = r.as_matrix()
+def create_random_quat():
+    # random.seed(22)
+    # real_component = random.randint(1, 10)
+    # i_hat = random.randint(1, 10)
+    # j_hat = random.randint(1, 10)
+    # k_hat = random.randint(1, 10)
+    # return [real_component, i_hat, j_hat, k_hat]
+    return [0.707, 0, 0.707, 0] #90 deg rotation
 
-    # Define translation vector
-    #test 1:
-    translation = np.array([0, 0, 0])
-    #test 2:
-    # translation = np.array([1.2, -0.5, 2.3])
-    # #test 3:
-    # translation = np.array([-3.4, 2.1, -1.9])
-    # #test 4:
-    # translation = np.array([0.8, 1.1, 2.9])
-    # #test 5:
-    # translation = np.array([2.3, -1.6, -0.9])
-    # #test 6:
-    # translation = np.array([-1.1, -0.9, 3.2])
-    # Apply rotation and translation
-    outputArr = inputArr.dot(rot_matrix.T) + translation
+def create_random_translation_vector():
+    random.seed(14)
+    i_hat = random.randint(1, 5)
+    j_hat = random.randint(1, 5)
+    k_hat = random.randint(1, 5)
+    return [i_hat, j_hat, k_hat]
 
-    # Round the values in the output matrix to integers
-    outputArr = np.round(outputArr).astype(int)
+def create_random_centroid_vector():
+    random.seed(19)
+    i_hat = random.randint(1, 10)
+    j_hat = random.randint(1, 10)
+    k_hat = random.randint(1, 10)
+    return [i_hat, j_hat, k_hat]
 
-    return outputArr
+def quat_norm(quat): #returns the norm of the quaternion
+    norm = np.sqrt(quat[0]**2 + quat[1]**2 + quat[2]**2 + quat[3]**2)
+    return norm
+
+
+def apply_initial_translation_and_rotation(point_cloud): #buggy: only applies translation in its current state
+    quat = create_random_quat()
+    norm = quat_norm(quat)
+    quat = [quat[0]/norm, quat[1]/norm, quat[2]/norm, quat[3]/norm]
+    quat_star = quat_conjugate(quat)
+    p_centroid = point_cloud_centroid_p(point_cloud)
+    translation_vector = create_random_translation_vector()
+    dummy_q_centroid = create_random_centroid_vector()
+
+    # left = quat_mult(quat, p_centroid)
+    # right = quat_mult(left, quat_star)
+    # Rp = right
+    # Rp = [Rp[1], Rp[2], Rp[3]]
+    # b = [dummy_q_centroid[0]-Rp[0], dummy_q_centroid[1]-Rp[1], dummy_q_centroid[2]-Rp[2]]
+    for i in range(len(point_cloud)):
+        point = point_cloud[i]
+        left = quat_mult(quat, point) #
+        right = quat_mult(left, quat_star) #
+        rotation = right #
+        moved_point = [rotation[1] + translation_vector[0], rotation[2] + translation_vector[1], rotation[3] + translation_vector[2]]#
+        point_cloud[i] = moved_point
+    return point_cloud
+    
 
 def closest_point_on_cylinder(point, height, rad, origin):
-    #point is at x==0 and y==0, arbitrary height
-    # if point[0] == 0 and point[1] == 0:
-    #     if point[2]>=(height/2):
-    #         z = height/2
-    #     # elif point[2]<(-height/2):
-    #     #     z = -height/2
-    #     else:
-    #         z = -height/2
-    #     return [point[0],point[1],z]
-    # if point[0] == 0 and point[1] == 0 and point[2] == 0:
-    #     return [point[0],point[1], point[2]]
-
-    #point is on the circle's circumference, arbitrary height
-    # if (point[0]**2 + point[1]**2 == rad**2):
-    #     if point[2]>=(height/2):
-    #         z = height/2
-    #     elif point[2]<=(-height/2):
-    #         z = -height/2
-    #     else:
-    #         z = point[2]
-    #     return [point[0], point[1], z]
-    
     #point is at arbitrary x, y, and z
     if point[2]>=(height/2):
         z = height/2
@@ -207,19 +194,27 @@ def calc_b(q_centroid, p_centroid, q, q_star):
     first_mult = quat_mult(q, p_centroid)
     second_mult = quat_mult(first_mult, q_star)
     vect = [second_mult[1], second_mult[2], second_mult[3]]
-    retval = np.array(q_centroid) - np.array(vect)
+    retval = [q_centroid[0]-vect[0], q_centroid[1]-vect[1], q_centroid[2]-vect[2]]
     return retval
 
 def createMatchDictionary(point_cloud_p, matchDict): #creates the match dictionary, which associates each point in arr1 to the point closest to in arr2
-    # for i, row in enumerate(point_cloud_p):
-    #     for j, point_p in enumerate(row):
-    #         matchDict[tuple(point_p)] = None
+    matchDict.clear()
     for point in point_cloud_p:
         matchDict[tuple(point)] = None
 
-def match(point_cloud_p, matchDict): #matches each of the points in one array to its closest corresponding point in the other array
-    createMatchDictionary(point_cloud_p, matchDict)
-    for point_p in point_cloud_p:
+def match(point_cloud_p, matchDict, q, it, q_centroid): #matches each of the points in one array to its closest corresponding point in the other array
+    if it>0:
+            matchDict.clear()
+    for i, point_p in enumerate(point_cloud_p):
+    #     if it>0:
+    #         p_centroid = point_cloud_centroid_p(point_cloud_p)
+    #         p_prime = calc_single_prime(point_p, p_centroid)
+    #         q_star = quat_conjugate(q)
+    #         left = quat_mult(q, p_prime)
+    #         right = quat_mult(left, q_star)
+    #         Rp = [right[1], right[2], right[3]]
+    #         point_p = [Rp[0]+q_centroid[0], Rp[1]+q_centroid[1], Rp[2]+q_centroid[2]]
+    #         point_cloud_p[i] = point_p
         point_q = tuple(closest_point_on_cylinder(point_p, 12, 0.87/2, [0, 0, 12/2]))
         point_p = tuple(point_p)
         matchDict[point_p] = point_q
@@ -234,7 +229,8 @@ def error(point_cloud_p, point_cloud_q, b, q, matchDict):
         Rp_i_right = quat_mult(Rp_i_left, q_star)
         Rp_i = Rp_i_right
         Rp_i = extract_vect_from_quat(Rp_i)
-        curr = Rp_i + b - point_q
+        # curr = Rp_i + b - point_q
+        curr = [Rp_i[0] + b[0] - point_q[0], Rp_i[1] + b[1] - point_q[1], Rp_i[2] + b[2] - point_q[2]]
         norm_squared = (math.sqrt(curr[0]**2 + curr[1]**2 + curr[2]**2))**2
         tot+=norm_squared
     return tot
@@ -265,7 +261,7 @@ def is_negative():
     rand_sign = -1 if rand_int == 0 else 1
     return rand_sign
 
-def generate_point_cloud_p(r, height): #cylinder point cloud
+def generate_point_cloud_p(r, h): #cylinder point cloud: r = radius; h = height
     # generate 100 points on the cylinder
     points = []
     num_points = 100
@@ -275,10 +271,69 @@ def generate_point_cloud_p(r, height): #cylinder point cloud
         x = random.uniform(-0.435, 0.435)
         sign_y = is_negative()
         y = (math.sqrt(r**2-x**2)) * sign_y
-        z = random.uniform(-height/2, height/2)
+        z = random.uniform(-h/2, h/2)
         point = [x,y,z]
         points.append(point)
     return points
+
+def plot_single_point_cloud(point_cloud_p):
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+
+    point_cloud_p_x = []
+    point_cloud_p_y = []
+    point_cloud_p_z = []
+    for point_p in point_cloud_p:
+        point_cloud_p_x.append(point_p[0])
+        point_cloud_p_y.append(point_p[1])
+        point_cloud_p_z.append(point_p[2])
+
+    # plot the points
+    ax.scatter(point_cloud_p_x, point_cloud_p_y, point_cloud_p_z, c='r', marker='o')
+
+    # Set the axis labels
+    ax.set_xlabel('X')
+    ax.set_ylabel('Y')
+    ax.set_zlabel('Z')
+    # Set the x, y, and z limits
+    # ax.set_xlim([-0.5, 0.5])
+    # ax.set_ylim([-0.5, 0.5])
+    # ax.set_zlim(-10, 10)
+
+    # Show the plot
+    plt.show()
+
+def plot_two_point_clouds(point_cloud_p, point_cloud_p_moved):
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+
+    point_cloud_p_x = []
+    point_cloud_p_y = []
+    point_cloud_p_z = []
+    for point_p in point_cloud_p:
+        point_cloud_p_x.append(point_p[0])
+        point_cloud_p_y.append(point_p[1])
+        point_cloud_p_z.append(point_p[2])
+
+    point_cloud_p_moved_x = []
+    point_cloud_p_moved_y = []
+    point_cloud_p_moved_z = []
+    for point_p in point_cloud_p_moved:
+        point_cloud_p_moved_x.append(point_p[0])
+        point_cloud_p_moved_y.append(point_p[1])
+        point_cloud_p_moved_z.append(point_p[2])
+
+    # plot the points
+    ax.scatter(point_cloud_p_x, point_cloud_p_y, point_cloud_p_z, c='r', marker='o')
+    ax.scatter(point_cloud_p_moved_x, point_cloud_p_moved_y, point_cloud_p_moved_z, c='b', marker='*')
+
+    # Set the axis limits and labels
+    ax.set_xlabel('X')
+    ax.set_ylabel('Y')
+    ax.set_zlabel('Z')
+
+    # Show the plot
+    plt.show()
 
 def plot(point_cloud_p):
     fig = plt.figure()
@@ -319,9 +374,6 @@ def plot(point_cloud_p):
     ax.plot_surface(x, y, z, alpha=0.5)
 
     # Set the axis limits and labels
-    # ax.set_xlim(-r, r)
-    # ax.set_ylim(-r, r)
-    # ax.set_zlim(0, h)
     ax.set_xlabel('X')
     ax.set_ylabel('Y')
     ax.set_zlabel('Z')
