@@ -63,11 +63,11 @@ for i in range(maxIterations):
         point_cloud_p[i] = point_p
     plot(point_cloud_p)
     
-# for i, point_p in enumerate(point_cloud_p):
-#     point_p = tuple(point_p)
-#     point_q = closest_point_on_cylinder(point_p, 12, .435, [0, 0, 0])
-#     point_p = point_q
-#     point_cloud_p[i] = point_p
+for i, point_p in enumerate(point_cloud_p):
+    point_p = tuple(point_p)
+    point_q = closest_point_on_cylinder(point_p, 12, .435, [0, 0, 0])
+    point_p = point_q
+    point_cloud_p[i] = point_p
 
 err = error(point_cloud_p, point_cloud_q, b, q, matchDict)
 print(err)
