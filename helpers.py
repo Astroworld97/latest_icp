@@ -249,13 +249,13 @@ def is_point_on_cyl(point, rad, height):
 def add_noise(point_cloud_p):
     for i, point_p in enumerate(point_cloud_p):
         #The first argument to numpy.random.normal is the mean of the distribution (in this case, 0), the second argument is the standard deviation (in this case, 1), and the third argument is the size of the output array (in this case, 1).
-        noise_x = np.random.normal(0,0.01,1)
-        noise_y = np.random.normal(0,0.01,1)
-        noise_z = np.random.normal(0,0.01,1)
+        upper = 0.3
+        noise_x = np.random.normal(0,upper,1)
+        noise_y = np.random.normal(0,upper,1)
+        noise_z = np.random.normal(0,upper,1)
         point_p_x = point_p[0] + noise_x
         point_p_y = point_p[1] + noise_y
         point_p_z = point_p[2] + noise_z
-        # point_p = [point_p_x, point_p_y, point_p_z]
         point_cloud_p[i][0] = point_p_x
         point_cloud_p[i][1] = point_p_y
         point_cloud_p[i][2] = point_p_z
