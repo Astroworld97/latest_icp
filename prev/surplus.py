@@ -358,3 +358,37 @@ point_cloud_p[i] = point_p
 
 # plot_single_point_cloud(point_cloud_p)
 # plot_single_point_cloud(point_cloud_q)
+
+#section 3a: single iteration (translation)
+# for i in range(maxIterations):
+#     match(point_cloud_p, matchDict, q, 0, q_centroid) #fill the matchDict and the distDict with the current matches
+#     for point_p in point_cloud_p:
+#         point_p = tuple(point_p)
+#         point_q = matchDict[point_p]
+#         p_prime = calc_single_prime(point_p, p_centroid)
+#         q_prime = calc_single_prime(point_q, q_centroid)
+#         P_i = create_prime_matrix_p(p_prime)
+#         Q_i = create_prime_matrix_q(q_prime)
+#         M_i = calc_single_M(P_i, Q_i)
+#         M+=M_i
+#     q = calc_q(M) #aka quat
+#     q_star = quat_conjugate(q) #conjugate of q, aka quat
+#     b = calc_b(q_centroid, p_centroid, q, q_star)
+#     for i, point_p in enumerate(point_cloud_p):
+#             point_p = [point_p[0] + b[0], point_p[1] + b[1], point_p[2] + b[2]]
+#             point_cloud_p[i] = point_p
+#     p_centroid = point_cloud_centroid_p(point_cloud_p)
+#     centroid_diff_x = abs(p_centroid[0] - q_centroid[0])
+#     centroid_diff_y = abs(p_centroid[1] - q_centroid[1])
+#     centroid_diff_z = abs(p_centroid[2] - q_centroid[2])
+#     if centroid_diff_x < 0.001 and centroid_diff_y < 0.001 and centroid_diff_z < 0.001:
+#         break
+#     print ([centroid_diff_x, centroid_diff_y, centroid_diff_z])
+# plot(point_cloud_p)
+
+    # dummy_q_centroid = create_random_centroid_vector()
+    # left = quat_mult(quat, p_centroid)
+    # right = quat_mult(left, quat_star)
+    # Rp = right
+    # Rp = [Rp[1], Rp[2], Rp[3]]
+    # b = [dummy_q_centroid[0]-Rp[0], dummy_q_centroid[1]-Rp[1], dummy_q_centroid[2]-Rp[2]]

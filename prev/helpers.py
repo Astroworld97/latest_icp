@@ -9,13 +9,13 @@ import random
 
 def create_random_quat():
     # random.seed(22)
-    real_component = random.randint(1, 10)
-    i_hat = random.randint(1, 10)
-    j_hat = random.randint(1, 10)
-    k_hat = random.randint(1, 10)
-    return [real_component, i_hat, j_hat, k_hat]
+    # real_component = random.randint(1, 10)
+    # i_hat = random.randint(1, 10)
+    # j_hat = random.randint(1, 10)
+    # k_hat = random.randint(1, 10)
+    # return [real_component, i_hat, j_hat, k_hat]
     # return [-0.7240972, 0, 0, -0.6896979] #234 deg rotation about z 
-    # return [0.707, 0, 0.707, 0] #90 deg rotation about y 
+    return [0.707, 0, 0.707, 0] #90 deg rotation about y 
     # return [0.707, 0, 0.707, 0] #90 deg rotation about y 
     # return [-0.8733046, -0.4871745, 0, 0] #45 deg rotation about x
 
@@ -37,21 +37,15 @@ def quat_norm(quat): #returns the norm of the quaternion
     norm = np.sqrt(quat[0]**2 + quat[1]**2 + quat[2]**2 + quat[3]**2)
     return norm
 
-
 def apply_initial_translation_and_rotation(point_cloud): #buggy: only applies translation in its current state
     quat = create_random_quat()
     norm = quat_norm(quat)
     quat = [quat[0]/norm, quat[1]/norm, quat[2]/norm, quat[3]/norm]
     quat_star = quat_conjugate(quat)
-    p_centroid = point_cloud_centroid_p(point_cloud)
-    translation_vector = create_random_translation_vector()
-    dummy_q_centroid = create_random_centroid_vector()
+    p_centroid = point_cloud_centroid(point_cloud)
+    # translation_vector = create_random_translation_vector()
+    translation_vector = [0,0,0]
 
-    # left = quat_mult(quat, p_centroid)
-    # right = quat_mult(left, quat_star)
-    # Rp = right
-    # Rp = [Rp[1], Rp[2], Rp[3]]
-    # b = [dummy_q_centroid[0]-Rp[0], dummy_q_centroid[1]-Rp[1], dummy_q_centroid[2]-Rp[2]]
     for i in range(len(point_cloud)):
         point = point_cloud[i]
         left = quat_mult(quat, point) #
@@ -65,12 +59,12 @@ def apply_initial_translation_and_rotation(point_cloud): #buggy: only applies tr
 
 def closest_point_on_cylinder(point, height, rad, origin):
     #point is at arbitrary x, y, and z
-    if point[2]>=(height):
-        z = height
-    elif point[2]<=0:
-        z = 0
-    else:
-        z = point[2]
+    # if point[2]>=(height):
+    #     z = height
+    # elif point[2]<=0:
+    #     z = 0
+    # else:
+    z = point[2]
 
     x = point[0]/math.sqrt(point[0]**2 + point[1]**2)
     y = point[1]/math.sqrt(point[0]**2 + point[1]**2)
@@ -128,14 +122,22 @@ def quat_mult(p,q): #quaternion multiplication. Inputs p and q are quaternions.
 def create_prime_matrix_p(prime_vector):
     prime_vector = [0, prime_vector[0], prime_vector[1], prime_vector[2]]
     values = [0, -1*prime_vector[1], -1*prime_vector[2], -1*prime_vector[3], prime_vector[1], 0, prime_vector[3], -1*prime_vector[2], prime_vector[2], -1*prime_vector[3], 0, prime_vector[1], prime_vector[3], prime_vector[2], -1*prime_vector[1], 0]
-    return np.array(values).reshape((4, 4))
+    values = np.array(values).reshape((4, 4))
+    # values = list(values)
+    # for i in range(len(values)):
+    #     values[i] = list(values[i])
+    return values
 
 def create_prime_matrix_q(prime_vector):
     prime_vector = [0, prime_vector[0], prime_vector[1], prime_vector[2]]
     values = [0, -1*prime_vector[1], -1*prime_vector[2], -1*prime_vector[3], prime_vector[1], 0, -1*prime_vector[3], prime_vector[2], prime_vector[2], prime_vector[3], 0, -1*prime_vector[1], prime_vector[3], -1*prime_vector[2], prime_vector[1], 0]
-    return np.array(values).reshape((4, 4))
+    values = np.array(values).reshape((4, 4))
+    # values = list(values)
+    # for i in range(len(values)):
+    #     values[i] = list(values[i])
+    return values
 
-def point_cloud_centroid_p(point_cloud): #computes centroid/mean/center of mass of point cloud
+def point_cloud_centroid(point_cloud): #computes centroid/mean/center of mass of point cloud
     arr = point_cloud
     sum_x = 0
     sum_y = 0
@@ -157,28 +159,15 @@ def point_cloud_centroid_p(point_cloud): #computes centroid/mean/center of mass 
 
     return [avg_x, avg_y, avg_z]
 
-def point_cloud_centroid_q(point_cloud): #computes centroid/mean/center of mass of point cloud
-    arr = point_cloud
-    sum_x = 0
-    sum_y = 0
-    sum_z = 0
-
-    if len(point_cloud)==0:
-        return [0,0,0]
-
-    num_points = 0
-    for point in arr:
-        sum_x += point[0]
-        sum_y += point[1]
-        sum_z += point[2]
-        num_points+=1
+def create_point_cloud_q_from_matches(point_cloud_p, matchDict):
+    point_cloud_q = []
+    for i in range(len(point_cloud_p)):
+        point_p = point_cloud_p[i]
+        point_p = tuple(point_p)
+        point_q = matchDict[point_p]
+        point_cloud_q.append(point_q)
+    return point_cloud_q
     
-    avg_x = sum_x/num_points
-    avg_y = sum_y/num_points
-    avg_z = sum_z/num_points
-
-    return [avg_x, avg_y, avg_z]
-
 def calc_single_prime(point, centroid):
     prime_x = point[0] - centroid[0]
     prime_y = point[1] - centroid[1] 
@@ -188,7 +177,7 @@ def calc_single_prime(point, centroid):
 def calc_single_M(P_i, Q_i):
     return np.matmul(P_i.T,Q_i)
 
-def calc_q(M):
+def calc_quat(M):
     eigenvalues,eigenvectors=eig(M)
     max_eigval_idx = np.argmax(eigenvalues)
     max_eigvec = eigenvectors[:, max_eigval_idx]
@@ -223,15 +212,15 @@ def match(point_cloud_p, matchDict, q, it, q_centroid): #matches each of the poi
         point_p = tuple(point_p)
         matchDict[point_p] = point_q
 
-def error(point_cloud_p, point_cloud_q, b, q, matchDict): 
+def error(point_cloud_p, point_cloud_q, b, quat, matchDict): 
     tot = 0
-    q_star = quat_conjugate(q)
+    quat_star = quat_conjugate(quat)
     for point_p in point_cloud_p:
         point_p = tuple(point_p)
         # point_q = matchDict[point_p]
         point_q = closest_point_on_cylinder(point_p, 12, .435, [0, 0, 12/2])
-        Rp_i_left = quat_mult(q, point_p)
-        Rp_i_right = quat_mult(Rp_i_left, q_star)
+        Rp_i_left = quat_mult(quat, point_p)
+        Rp_i_right = quat_mult(Rp_i_left, quat_star)
         Rp_i = Rp_i_right
         Rp_i = extract_vect_from_quat(Rp_i)
         # curr = Rp_i + b - point_q
@@ -280,7 +269,7 @@ def generate_point_cloud_p(r, h): #cylinder point cloud: r = radius; h = height
         x = random.uniform(-0.435, 0.435)
         sign_y = is_negative()
         y = (math.sqrt(r**2-x**2)) * sign_y
-        z = random.uniform(-h/2, h/2)
+        z = random.uniform(0, h)
         point = [x,y,z]
         points.append(point)
     return points

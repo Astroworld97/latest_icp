@@ -9,8 +9,8 @@ from helpers import *
 
 #main
 #section 1: define constants and data structures
-maxIterations = 100
-tolerance = 0.1
+maxIterations = 1000
+tolerance = 2
 matchDict = {}
 # Define the cylinder height and radius
 h = 12
@@ -20,8 +20,9 @@ r = .435 #.87/2
 point_cloud_q = np.array(generate_point_cloud_p(r, h))
 copy = point_cloud_q.copy()
 point_cloud_p = apply_initial_translation_and_rotation(copy)
-point_cloud_p = add_noise(point_cloud_p)
-plot_two_point_clouds(point_cloud_p, point_cloud_q)
+# point_cloud_p = add_noise(point_cloud_p)
+# plot_two_point_clouds(point_cloud_p, point_cloud_q)
+plot(point_cloud_p)
 M = np.zeros((4, 4)) 
 b = 0
 q = [0,0,0,0] #aka quat
@@ -39,7 +40,7 @@ for i in range(maxIterations):
         if err<tolerance:
             break
 
-    p_centroid = point_cloud_centroid_p(point_cloud_p)
+    p_centroid = point_cloud_centroid(point_cloud_p)
 
     for point_p in point_cloud_p:
         point_p = tuple(point_p)
@@ -51,22 +52,24 @@ for i in range(maxIterations):
         M_i = calc_single_M(P_i, Q_i)
         M+=M_i
 
-    q = calc_q(M) #aka quat
+    q = calc_quat(M) #aka quat
+    norm = quat_norm(q)
+    q = [q[0]/norm, q[1]/norm, q[2]/norm, q[3]/norm]
     q_star = quat_conjugate(q) #conjugate of q, aka quat
     b = calc_b(q_centroid, p_centroid, q, q_star)
     for i, point_p in enumerate(point_cloud_p):
         left_curr = quat_mult(q, point_p)
         right_curr = quat_mult(left_curr, q_star)
         Rp = [right_curr[1],right_curr[2], right_curr[3]]
-        point_p = [Rp[0], Rp[1], Rp[2]]
+        point_p = [Rp[0] + b[0], Rp[1] + b[1], Rp[2] + b[2]]
         point_cloud_p[i] = point_p
     plot(point_cloud_p)
     
-for i, point_p in enumerate(point_cloud_p):
-    point_p = tuple(point_p)
-    point_q = closest_point_on_cylinder(point_p, 12, .435, [0, 0, 0])
-    point_p = point_q
-    point_cloud_p[i] = point_p
+# for i, point_p in enumerate(point_cloud_p):
+#     point_p = tuple(point_p)
+#     point_q = closest_point_on_cylinder(point_p, 12, .435, [0, 0, 0])
+#     point_p = point_q
+#     point_cloud_p[i] = point_p
 
 err = error(point_cloud_p, point_cloud_q, b, q, matchDict)
 print(err)
