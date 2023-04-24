@@ -12,12 +12,13 @@ from helpers import *
 maxIterations = 1000
 tolerance = 0.1
 matchDict = {}
+colorDict = {}
 # Define the cylinder height and radius
 h = 12
 r = .435 #.87/2
 
 #section 2: define arrays (aka point clouds) and initialize dictionaries
-point_cloud_q = np.array(generate_point_cloud_p(r, h))
+point_cloud_q = np.array(generate_point_cloud_p(r, h, colorDict))
 copy = point_cloud_q.copy()
 point_cloud_p = apply_initial_translation_and_rotation(copy)
 # point_cloud_p = add_noise(point_cloud_p)

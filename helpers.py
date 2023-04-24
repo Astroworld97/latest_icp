@@ -258,7 +258,7 @@ def is_negative():
 #     for i in range(len(point_cloud)):
 
 
-def generate_point_cloud_p(r, h): #cylinder point cloud: r = radius; h = height
+def generate_point_cloud_p(r, h, colorDict): #cylinder point cloud: r = radius; h = height
     # generate 100 points on the cylinder
     points = []
     num_points = 100
@@ -268,9 +268,12 @@ def generate_point_cloud_p(r, h): #cylinder point cloud: r = radius; h = height
         x = random.uniform(-0.435, 0.435)
         sign_y = is_negative()
         y = (math.sqrt(r**2-x**2)) * sign_y
-        z = random.uniform(-h/2, h/2)
+        # z = random.uniform(-h/2, h/2)
+        z = random.uniform(0, h)
         point = [x,y,z]
         points.append(point)
+    # for point in points:
+    #     if point[2] > 
     return points
 
 def plot_single_point_cloud(point_cloud_p):
