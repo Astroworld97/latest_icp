@@ -1,4 +1,4 @@
-#quaternion implementation from 577 class notes
+#quaternion implementation from 577 class notes. All units in inches.
 import numpy as np
 import math
 import matplotlib.pyplot as plt
@@ -16,8 +16,8 @@ maxIterations = 10000
 tolerance = 0.1
 matchDict = {}
 colorDictP = {}
-modelHuedRange = [10.00, 12.0] #section of analytical model with color tape
-modelWoodenRange = [0.0, 9.99] #section of analytical model that is wooden
+modelHuedRange = [10.00, 12.00] #section of analytical model with color tape
+modelWoodenRange = [0.00, 9.99] #section of analytical model that is wooden
 # Define the cylinder height and radius
 h = 12
 r = .435 #.87/2
@@ -44,19 +44,7 @@ quat = [0,0,0,0] #aka quat
 p_centroid = point_cloud_centroid(point_cloud_p)
 q_centroid = [0,0,6]
 
-# #section 3a: single iteration (translation)
-centroid_diff_x = q_centroid[0] - p_centroid[0]
-centroid_diff_y = q_centroid[1] - p_centroid[1]
-centroid_diff_z = q_centroid[2] - p_centroid[2]
-for i, point_p in enumerate(point_cloud_p):
-    color = colorDictP[tuple(point_p)]
-    colorDictP[tuple(point_p)] = ()
-    point_p = [point_p[0] + centroid_diff_x, point_p[1] + centroid_diff_y, point_p[2] + centroid_diff_z]
-    point_cloud_p[i] = point_p
-    colorDictP[tuple(point_p)] = color
-plot(point_cloud_p, colorDictP)
-
-# #section 3b: iterate (rotation)
+# #section 3: iterate (rotation)
 point_cloud_p_best = point_cloud_p
 best_err = 10000000
 for i in range(maxIterations):

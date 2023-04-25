@@ -200,63 +200,28 @@ def closest_point_on_cylinder(point, height, rad, origin, colorDictP, modelHuedR
     x = x * rad
     y = y * rad
     
-    if point[2]>=(height):
-        z = height
-        cylpoint = [x,y,z]
-        point_color = colorDictP[tuple(point)]
-        cylpoint_color = get_cylpoint_color(cylpoint, modelHuedRange)
-        if color_match(point_color, cylpoint_color):
-            return cylpoint
+    point_color = colorDictP[tuple(point)]
+
+    if point[2]>=(height): #point lies above cylinder model in z   
+        if color_match(point_color, (0.0,1.0,1.0)):
+            z = height
         else:
-            for i in range(0, 1201, 1):
-                to_subtract = i / 100.0
-                z -= to_subtract
-                cylpoint = [x,y,z]
-                cylpoint_color = get_cylpoint_color(cylpoint, modelHuedRange)
-                if color_match(point_color, cylpoint_color):
-                    return cylpoint
-    elif point[2]<=0:
-        z = 0
-        cylpoint = [x,y,z]
-        point_color = colorDictP[tuple(point)]
-        cylpoint_color = get_cylpoint_color(cylpoint, modelHuedRange)
-        if color_match(point_color, cylpoint_color):
-            return cylpoint
+            z = 9.99
+    elif point[2]<=0: #point lies below cylinder model in z
+        if color_match(point_color, (17/360, 125/255, 210/255)):
+            z = 0
         else:
-            for i in range(0, 1201, 1):
-                to_add = i / 100.0
-                z += to_add
-                cylpoint = [x,y,z]
-                cylpoint_color = get_cylpoint_color(cylpoint, modelHuedRange)
-                if color_match(point_color, cylpoint_color):
-                    return cylpoint
-    else:
-        z = point[2]
-        cylpoint = [x,y,z]
-        point_color = colorDictP[tuple(point)]
-        cylpoint_color = get_cylpoint_color(cylpoint, modelHuedRange)
-        if color_match(point_color, cylpoint_color):
-            return cylpoint
+            z = 10.00
+    elif 10.00<=point[2]<height: #point lies somewhere within red range of cylinder model
+        if color_match(point_color, (0.0,1.0,1.0)):
+            z = point[2]
         else:
-            height_check = z
-            while(height_check!=height):
-                for i in range(0, 1201, 1):
-                    to_add = i / 100.0
-                    z += to_add
-                    cylpoint = [x,y,z]
-                    cylpoint_color = get_cylpoint_color(cylpoint, modelHuedRange)
-                    if color_match(point_color, cylpoint_color):
-                        return cylpoint
-                    z -= to_add
-                    height_check += 0.01
-            for i in range(0, 1201, 1):
-                to_subtract = i / 100.0
-                z -= to_subtract
-                cylpoint = [x,y,z]
-                cylpoint_color = get_cylpoint_color(cylpoint, modelHuedRange)
-                if color_match(point_color, cylpoint_color):
-                    return cylpoint
-                z += to_subtract
+            z = 9.99
+    else: #point lies somewhere within wood range of cylinder model
+        if color_match(point_color, (17/360, 125/255, 210/255)):
+            z = point[2]
+        else:
+            z = 10.00
     return [x,y,z]
 
 def match(point_cloud_p, matchDict, q, it, q_centroid, colorDictP, modelHuedRange): #matches each of the points in one array to its closest corresponding point in the other array
