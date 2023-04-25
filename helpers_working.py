@@ -6,9 +6,6 @@ from mpl_toolkits.mplot3d import Axes3D
 from scipy.spatial.transform import Rotation
 from numpy.linalg import eig
 import random
-import colorsys
-import hashlib
-import copy
 
 def create_random_quat():
     # random.seed(22)
@@ -40,7 +37,7 @@ def quat_norm(quat): #returns the norm of the quaternion
     norm = np.sqrt(quat[0]**2 + quat[1]**2 + quat[2]**2 + quat[3]**2)
     return norm
 
-def apply_initial_translation_and_rotation(point_cloud, colorDict): #buggy: only applies translation in its current state
+def apply_initial_translation_and_rotation(point_cloud): #buggy: only applies translation in its current state
     quat = create_random_quat()
     norm = quat_norm(quat)
     quat = [quat[0]/norm, quat[1]/norm, quat[2]/norm, quat[3]/norm]
@@ -50,16 +47,32 @@ def apply_initial_translation_and_rotation(point_cloud, colorDict): #buggy: only
 
     for i in range(len(point_cloud)):
         point = point_cloud[i]
-        color = colorDict[tuple(point)]
-        colorDict[tuple(point)] = ()
         left = quat_mult(quat, point) #
         right = quat_mult(left, quat_star) #
         rotation = right #
         moved_point = [rotation[1] + translation_vector[0], rotation[2] + translation_vector[1], rotation[3] + translation_vector[2]]#
         # moved_point = [point[0] + translation_vector[0], point[1] + translation_vector[1], point[2] + translation_vector[2]]#
         point_cloud[i] = moved_point
-        colorDict[tuple(moved_point)] = color
-    return point_cloud, colorDict   
+    return point_cloud
+    
+
+def closest_point_on_cylinder(point, height, rad, origin):
+    #point is at arbitrary x, y, and z
+    if point[2]>=(height):
+        z = height
+    elif point[2]<=0:
+        z = 0
+    else:
+        z = point[2]
+
+    x = point[0]/math.sqrt(point[0]**2 + point[1]**2)
+    y = point[1]/math.sqrt(point[0]**2 + point[1]**2)
+    x = x * rad
+    y = y * rad
+    left = round((x**2 + y**2), 4)
+    right = round((rad**2), 4)
+    assert left == right, print([x,y,z])
+    return [x,y,z]
 
 def quat_dot_product(p, q): #inputs are quaternions. Remember the 0th element is irrelevant here.
     if len(p)==3:
@@ -181,99 +194,30 @@ def createMatchDictionary(point_cloud_p, matchDict): #creates the match dictiona
     for point in point_cloud_p:
         matchDict[tuple(point)] = None
 
-def get_cylpoint_color(cylpoint, modelHuedRange):
-    if modelHuedRange[0] <= cylpoint[2] <= modelHuedRange[1]:
-        return (0.0, 1.0, 1.0) #HSV values for red
-    else:
-        return (17/360, 125/255, 210/255) # HSV values for wood
-
-def color_match(point_color, cylpoint_color):
-    if point_color[0] == cylpoint_color[0] and point_color[1] == cylpoint_color[1] and point_color[2] == cylpoint_color[2]:
-        return True
-    else:
-        return False
-
-def closest_point_on_cylinder(point, height, rad, origin, colorDictP, modelHuedRange):
-    #point is at arbitrary x, y, and z
-    x = point[0]/math.sqrt(point[0]**2 + point[1]**2)
-    y = point[1]/math.sqrt(point[0]**2 + point[1]**2)
-    x = x * rad
-    y = y * rad
-    
-    if point[2]>=(height):
-        z = height
-        cylpoint = [x,y,z]
-        point_color = colorDictP[tuple(point)]
-        cylpoint_color = get_cylpoint_color(cylpoint, modelHuedRange)
-        if color_match(point_color, cylpoint_color):
-            return cylpoint
-        else:
-            for i in range(0, 1201, 1):
-                to_subtract = i / 100.0
-                z -= to_subtract
-                cylpoint = [x,y,z]
-                cylpoint_color = get_cylpoint_color(cylpoint, modelHuedRange)
-                if color_match(point_color, cylpoint_color):
-                    return cylpoint
-    elif point[2]<=0:
-        z = 0
-        cylpoint = [x,y,z]
-        point_color = colorDictP[tuple(point)]
-        cylpoint_color = get_cylpoint_color(cylpoint, modelHuedRange)
-        if color_match(point_color, cylpoint_color):
-            return cylpoint
-        else:
-            for i in range(0, 1201, 1):
-                to_add = i / 100.0
-                z += to_add
-                cylpoint = [x,y,z]
-                cylpoint_color = get_cylpoint_color(cylpoint, modelHuedRange)
-                if color_match(point_color, cylpoint_color):
-                    return cylpoint
-    else:
-        z = point[2]
-        cylpoint = [x,y,z]
-        point_color = colorDictP[tuple(point)]
-        cylpoint_color = get_cylpoint_color(cylpoint, modelHuedRange)
-        if color_match(point_color, cylpoint_color):
-            return cylpoint
-        else:
-            height_check = z
-            while(height_check!=height):
-                for i in range(0, 1201, 1):
-                    to_add = i / 100.0
-                    z += to_add
-                    cylpoint = [x,y,z]
-                    cylpoint_color = get_cylpoint_color(cylpoint, modelHuedRange)
-                    if color_match(point_color, cylpoint_color):
-                        return cylpoint
-                    z -= to_add
-                    height_check += 0.01
-            for i in range(0, 1201, 1):
-                to_subtract = i / 100.0
-                z -= to_subtract
-                cylpoint = [x,y,z]
-                cylpoint_color = get_cylpoint_color(cylpoint, modelHuedRange)
-                if color_match(point_color, cylpoint_color):
-                    return cylpoint
-                z += to_subtract
-    return [x,y,z]
-
-def match(point_cloud_p, matchDict, q, it, q_centroid, colorDictP, modelHuedRange): #matches each of the points in one array to its closest corresponding point in the other array
+def match(point_cloud_p, matchDict, q, it, q_centroid): #matches each of the points in one array to its closest corresponding point in the other array
     if it>0:
             matchDict.clear()
     for i, point_p in enumerate(point_cloud_p):
-        point_q = tuple(closest_point_on_cylinder(point_p, 12, 0.87/2, [0, 0, 12/2], colorDictP, modelHuedRange))
+    #     if it>0:
+    #         p_centroid = point_cloud_centroid_p(point_cloud_p)
+    #         p_prime = calc_single_prime(point_p, p_centroid)
+    #         q_star = quat_conjugate(q)
+    #         left = quat_mult(q, p_prime)
+    #         right = quat_mult(left, q_star)
+    #         Rp = [right[1], right[2], right[3]]
+    #         point_p = [Rp[0]+q_centroid[0], Rp[1]+q_centroid[1], Rp[2]+q_centroid[2]]
+    #         point_cloud_p[i] = point_p
+        point_q = tuple(closest_point_on_cylinder(point_p, 12, 0.87/2, [0, 0, 12/2]))
         point_p = tuple(point_p)
         matchDict[point_p] = point_q
 
-def error(point_cloud_p, point_cloud_q, b, quat, matchDict, colorDictP, modelHuedRange): 
+def error(point_cloud_p, point_cloud_q, b, quat, matchDict): 
     tot = 0
     quat_star = quat_conjugate(quat)
     for point_p in point_cloud_p:
         point_p = tuple(point_p)
         # point_q = matchDict[point_p]
-        point_q = closest_point_on_cylinder(point_p, 12, .435, [0, 0, 12/2], colorDictP, modelHuedRange)
+        point_q = closest_point_on_cylinder(point_p, 12, .435, [0, 0, 12/2])
         Rp_i_left = quat_mult(quat, point_p)
         Rp_i_right = quat_mult(Rp_i_left, quat_star)
         Rp_i = Rp_i_right
@@ -283,6 +227,12 @@ def error(point_cloud_p, point_cloud_q, b, quat, matchDict, colorDictP, modelHue
         norm_squared = (math.sqrt(curr[0]**2 + curr[1]**2 + curr[2]**2))**2
         tot+=norm_squared
     return tot
+
+def is_point_on_cyl(point, rad, height):
+    if (point[0]**2 + point[1]**2 == rad**2) and point[2] > (-height/2) and point[2] < (height/2):
+        return True
+    else:
+        return False
 
 def add_noise(point_cloud_p):
     for i, point_p in enumerate(point_cloud_p):
@@ -304,7 +254,11 @@ def is_negative():
     rand_sign = -1 if rand_int == 0 else 1
     return rand_sign
 
-def generate_point_cloud_p(r, height, colorDict): #cylinder point cloud: r = radius; h = height
+# def shift(point_cloud):
+#     for i in range(len(point_cloud)):
+
+
+def generate_point_cloud_p(r, h): #cylinder point cloud: r = radius; h = height
     # generate 100 points on the cylinder
     points = []
     num_points = 100
@@ -314,90 +268,107 @@ def generate_point_cloud_p(r, height, colorDict): #cylinder point cloud: r = rad
         x = random.uniform(-0.435, 0.435)
         sign_y = is_negative()
         y = (math.sqrt(r**2-x**2)) * sign_y
-        z = random.uniform(0, height)
+        z = random.uniform(-h/2, h/2)
         point = [x,y,z]
         points.append(point)
-    for point in points:
-        if point[2] >= 10:
-            #red hsv values
-            # hue = 177
-            # s = 170
-            # v = 230
-            #values below are for purposes of plotting using ax.scatter
-            hue = 0
-            s = 1
-            v = 1
-            point_tup = tuple(point)
-            colorDict[point_tup] = (hue,s,v)
-        else:
-            #wood hsv values
-            hue = 17/360
-            s = 125/255
-            v = 210/255
-            point_tup = tuple(point)
-            colorDict[point_tup] = (hue,s,v)
-    return points, colorDict
+    return points
 
-def plot(point_cloud_p, colorDict):
+def plot_single_point_cloud(point_cloud_p):
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
 
-    # extract x, y, z coordinates from arr1 and arr2
     point_cloud_p_x = []
     point_cloud_p_y = []
     point_cloud_p_z = []
-    point_color_arr = []
     for point_p in point_cloud_p:
         point_cloud_p_x.append(point_p[0])
         point_cloud_p_y.append(point_p[1])
         point_cloud_p_z.append(point_p[2])
-        point_color_arr.append(colorDict[tuple(point_p)])
+
+    # plot the points
+    ax.scatter(point_cloud_p_x, point_cloud_p_y, point_cloud_p_z, c='r', marker='o')
+
+    # Set the axis labels
+    ax.set_xlabel('X')
+    ax.set_ylabel('Y')
+    ax.set_zlabel('Z')
+    # Set the x, y, and z limits
+    # ax.set_xlim([-0.5, 0.5])
+    # ax.set_ylim([-0.5, 0.5])
+    # ax.set_zlim(-10, 10)
+
+    # Show the plot
+    plt.show()
+
+def plot_two_point_clouds(point_cloud_p, point_cloud_p_moved):
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+
+    point_cloud_p_x = []
+    point_cloud_p_y = []
+    point_cloud_p_z = []
+    for point_p in point_cloud_p:
+        point_cloud_p_x.append(point_p[0])
+        point_cloud_p_y.append(point_p[1])
+        point_cloud_p_z.append(point_p[2])
+
+    point_cloud_p_moved_x = []
+    point_cloud_p_moved_y = []
+    point_cloud_p_moved_z = []
+    for point_p in point_cloud_p_moved:
+        point_cloud_p_moved_x.append(point_p[0])
+        point_cloud_p_moved_y.append(point_p[1])
+        point_cloud_p_moved_z.append(point_p[2])
+
+    # plot the points
+    ax.scatter(point_cloud_p_x, point_cloud_p_y, point_cloud_p_z, c='r', marker='o')
+    ax.scatter(point_cloud_p_moved_x, point_cloud_p_moved_y, point_cloud_p_moved_z, c='b', marker='*')
+
+    # Set the axis limits and labels
+    ax.set_xlabel('X')
+    ax.set_ylabel('Y')
+    ax.set_zlabel('Z')
+
+    # Show the plot
+    plt.show()
+
+def plot(point_cloud_p):
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+
+    # extract x, y, z coordinates from arr1 and arr2
+    # arr1_x = [point[0] for point in arr1]
+    # arr1_y = [point[1] for point in arr1]
+    # arr1_z = [point[2] for point in arr1]
+    point_cloud_p_x = []
+    point_cloud_p_y = []
+    point_cloud_p_z = []
+    for point_p in point_cloud_p:
+        point_cloud_p_x.append(point_p[0])
+        point_cloud_p_y.append(point_p[1])
+        point_cloud_p_z.append(point_p[2])
 
     # Define the cylinder height and radius
     h = 12
     r = .87/2
 
     # Define the number of points to use for the cylinder surface
-    num_points = 1200
+    num_points = 50
 
-    # Define the colors for each half of the cylinder
-    color1 = (17/360, 125/255, 210/255) # HSV values for wood
-    color2 = (0.0, 1.0, 1.0) # HSV values for red
-
-    # Convert HSV colors to RGB colors
-    color1_rgb = colorsys.hsv_to_rgb(color1[0], color1[1], color1[2])
-    color2_rgb = colorsys.hsv_to_rgb(color2[0], color2[1], color2[2])
-
-    # Create the cylinder surface
+    # Generate the x and y coordinates of the cylinder surface
     theta = np.linspace(0, 2*np.pi, num_points)
-    z = np.linspace(0, h, num_points)
-    r, theta = np.meshgrid(r, theta)
-    x = r*np.cos(theta)
-    y = r*np.sin(theta)
-    z, _ = np.meshgrid(z, theta)
+    x = r * np.cos(theta)
+    y = r * np.sin(theta)
 
-    # Define the color values for each section of the cylinder surface
-    facecolors = np.zeros((num_points, num_points, 4))
-    for i in range(num_points):
-        if i < num_points - 200:
-            facecolors[:,i,:] = (*color1_rgb, 1)
-        else:
-            facecolors[:,i,:] = (*color2_rgb, 1)
+    # Generate the z coordinates of the cylinder surface
+    z = np.linspace(0, h, num_points)
+    z = np.tile(z, (num_points, 1)).T
 
     # plot the points
-    # ax.scatter(point_cloud_p_x, point_cloud_p_y, point_cloud_p_z, c='r', marker='o')
-    for i in range(len(point_cloud_p_x)):
-        point_color = point_color_arr[i]
-        hue = point_color[0]
-        saturation = point_color[1]
-        value = point_color[2]
-        r, g, b = colorsys.hsv_to_rgb(hue, saturation, value)
-        color = np.array([r,g,b])
-        color=color.reshape(1,-1)
-        ax.scatter(point_cloud_p_x[i], point_cloud_p_y[i], point_cloud_p_z[i], c=color, marker='o')
+    ax.scatter(point_cloud_p_x, point_cloud_p_y, point_cloud_p_z, c='r', marker='o')
 
     # Plot the cylinder surface
-    ax.plot_surface(x, y, z, facecolors=facecolors, alpha=0.3, shade=True)
+    ax.plot_surface(x, y, z, alpha=0.5)
 
     # Set the axis limits and labels
     ax.set_xlabel('X')
