@@ -74,6 +74,37 @@ def closest_point_on_cylinder(point, height, rad, origin):
     assert left == right, print([x,y,z])
     return [x,y,z]
 
+def closest_point_on_cylinder(point, height, rad, origin, colorDictP, modelBlueRange, modelRedRange):
+    #point is at arbitrary x, y, and z
+    x = point[0]/math.sqrt(point[0]**2 + point[1]**2)
+    y = point[1]/math.sqrt(point[0]**2 + point[1]**2)
+    x = x * rad
+    y = y * rad
+    
+    point_color = colorDictP[tuple(point)]
+
+    if point[2]>=(height): #point lies above cylinder model in z   
+        if color_match(point_color, (0.0,1.0,1.0)):
+            z = height
+        else:
+            z = 9.99
+    elif point[2]<=0: #point lies below cylinder model in z
+        if color_match(point_color, (17/360, 125/255, 210/255)):
+            z = 0
+        else:
+            z = 10.00
+    elif 10.00<=point[2]<height: #point lies somewhere within red range of cylinder model
+        if color_match(point_color, (0.0,1.0,1.0)):
+            z = point[2]
+        else:
+            z = 9.99
+    else: #point lies somewhere within wood range of cylinder model
+        if color_match(point_color, (17/360, 125/255, 210/255)):
+            z = point[2]
+        else:
+            z = 10.00
+    return [x,y,z]
+
 def quat_dot_product(p, q): #inputs are quaternions. Remember the 0th element is irrelevant here.
     if len(p)==3:
         p = vect_to_quat(p)

@@ -16,28 +16,22 @@ maxIterations = 10000
 tolerance = 0.1
 matchDict = {}
 colorDictP = {}
-modelHuedRange = [10.00, 12.00] #section of analytical model with color tape
-modelWoodenRange = [0.00, 9.99] #section of analytical model that is wooden
+modelBlueRange = [10.00, 12.00] #section of analytical model with color tape
+modelRedRange = [0.00, 2.00] #section of analytical model that is wooden
 # Define the cylinder height and radius
 h = 12
 r = .435 #.87/2
 
 #section 2: define arrays (aka point clouds) and initialize dictionaries
 point_cloud_q, colorDictP = np.array(generate_point_cloud_p(r, h, colorDictP))
-# point_cloud_q = [[0.5,0.5,15.0], [0.6,0.6,15.0], [0.5,0.5,11.0], [0.6,0.6,11.0], [0.5,0.5,3.0], [0.6,0.6,3.0], [0.5,0.5,-3.0], [0.6,0.6,-3.0]]
-# colorDictP[tuple(point_cloud_q[0])] = (0.0, 1.0, 1.0)
-# colorDictP[tuple(point_cloud_q[1])] = (17/360, 125/255, 210/255)
-# colorDictP[tuple(point_cloud_q[2])] = (0.0, 1.0, 1.0)
-# colorDictP[tuple(point_cloud_q[3])] = (17/360, 125/255, 210/255)
-# colorDictP[tuple(point_cloud_q[4])] = (0.0, 1.0, 1.0)
-# colorDictP[tuple(point_cloud_q[5])] = (17/360, 125/255, 210/255)
-# colorDictP[tuple(point_cloud_q[6])] = (0.0, 1.0, 1.0)
-# colorDictP[tuple(point_cloud_q[7])] = (17/360, 125/255, 210/255)
+# print(point_cloud_q.type)
 point_cloud_p = point_cloud_q.copy()
+# colorDictP = txt_to_dict('exportDict.txt')
+point_cloud_p = list(colorDictP.keys())
 plot(point_cloud_p, colorDictP)
 point_cloud_p, colorDictP = apply_initial_translation_and_rotation(point_cloud_p, colorDictP)
 # # point_cloud_p = add_noise(point_cloud_p)
-plot(point_cloud_p, colorDictP)
+# plot(point_cloud_p, colorDictP)
 M = np.zeros((4, 4)) 
 b = 0
 quat = [0,0,0,0] #aka quat
@@ -49,10 +43,10 @@ point_cloud_p_best = point_cloud_p
 best_err = 10000000
 for i in range(maxIterations):
 
-    match(point_cloud_p, matchDict, quat, i, q_centroid, colorDictP, modelHuedRange) #fill the matchDict with the current matches
+    match(point_cloud_p, matchDict, quat, i, q_centroid, colorDictP, modelBlueRange, modelRedRange) #fill the matchDict with the current matches
 
     if(i>0): #only check for error after the 0th loop
-        err = error(point_cloud_p, point_cloud_q, b, quat, matchDict, colorDictP, modelHuedRange)
+        err = error(point_cloud_p, point_cloud_q, b, quat, matchDict, colorDictP, modelBlueRange, modelRedRange)
         if err<best_err:
             best_err = err
             print("update")
@@ -91,7 +85,7 @@ for i in range(maxIterations):
 print(best_err)
 plot(point_cloud_p_best, colorDictP)
 
-err = error(point_cloud_p, point_cloud_q, b, quat, matchDict, colorDictP, modelHuedRange)
+err = error(point_cloud_p, point_cloud_q, b, quat, matchDict, colorDictP, modelBlueRange, modelRedRange)
 print(p_centroid)
 print(q_centroid)
 # plot(point_cloud_p, colorDict)

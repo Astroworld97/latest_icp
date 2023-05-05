@@ -9,6 +9,7 @@ import random
 import colorsys
 import hashlib
 import copy
+import ast
 
 def create_random_quat():
     # random.seed(22)
@@ -187,13 +188,35 @@ def get_cylpoint_color(cylpoint, modelHuedRange):
     else:
         return (17/360, 125/255, 210/255) # HSV values for wood
 
+# def color_match(point_color, cylpoint_color):
+#     if point_color[0] == cylpoint_color[0] and point_color[1] == cylpoint_color[1] and point_color[2] == cylpoint_color[2]:
+#         return True
+#     else:
+#         return False
+
 def color_match(point_color, cylpoint_color):
-    if point_color[0] == cylpoint_color[0] and point_color[1] == cylpoint_color[1] and point_color[2] == cylpoint_color[2]:
+    if abs(point_color[0] - cylpoint_color[0]) <= 10 and abs(point_color[1] - cylpoint_color[1]) <= 10 and abs(point_color[2] - cylpoint_color[2]) <= 10:
         return True
     else:
         return False
 
-def closest_point_on_cylinder(point, height, rad, origin, colorDictP, modelHuedRange):
+def txt_to_dict(filename):
+    # Open the file
+    with open(filename, 'r') as file:
+        # Initialize an empty dictionary
+        my_dict = {}
+        # Iterate over each line in the file
+        for line in file:
+            # Split the line into key and value using the colon separator
+            line = line.strip('\n')
+            key, value = line.split(':')
+            # Add the key value pair to the dictionary
+            key = ast.literal_eval(key)
+            value = ast.literal_eval(value)
+            my_dict[key] = value
+    return my_dict
+
+def closest_point_on_cylinder(point, height, rad, origin, colorDictP, modelBlueRange, modelRedRange):
     #point is at arbitrary x, y, and z
     x = point[0]/math.sqrt(point[0]**2 + point[1]**2)
     y = point[1]/math.sqrt(point[0]**2 + point[1]**2)
@@ -203,42 +226,42 @@ def closest_point_on_cylinder(point, height, rad, origin, colorDictP, modelHuedR
     point_color = colorDictP[tuple(point)]
 
     if point[2]>=(height): #point lies above cylinder model in z   
-        if color_match(point_color, (0.0,1.0,1.0)):
+        if color_match(point_color, (240/360, 1.0, 1.0)):
             z = height
         else:
-            z = 9.99
+            z = 2.00
     elif point[2]<=0: #point lies below cylinder model in z
-        if color_match(point_color, (17/360, 125/255, 210/255)):
+        if color_match(point_color, (0.0, 1.0, 1.0)):
             z = 0
         else:
             z = 10.00
-    elif 10.00<=point[2]<height: #point lies somewhere within red range of cylinder model
-        if color_match(point_color, (0.0,1.0,1.0)):
+    elif 10.00<=point[2]<height: #point lies somewhere within blue range of cylinder model
+        if color_match(point_color, (240/360, 1.0, 1.0)):
             z = point[2]
         else:
-            z = 9.99
-    else: #point lies somewhere within wood range of cylinder model
-        if color_match(point_color, (17/360, 125/255, 210/255)):
+            z = 2.00
+    else: #point lies somewhere within red range of cylinder model
+        if color_match(point_color, (0.0, 1.0, 1.0)):
             z = point[2]
         else:
             z = 10.00
     return [x,y,z]
 
-def match(point_cloud_p, matchDict, q, it, q_centroid, colorDictP, modelHuedRange): #matches each of the points in one array to its closest corresponding point in the other array
+def match(point_cloud_p, matchDict, q, it, q_centroid, colorDictP, modelBlueRange, modelRedRange): #matches each of the points in one array to its closest corresponding point in the other array
     if it>0:
             matchDict.clear()
     for i, point_p in enumerate(point_cloud_p):
-        point_q = tuple(closest_point_on_cylinder(point_p, 12, 0.87/2, [0, 0, 12/2], colorDictP, modelHuedRange))
+        point_q = tuple(closest_point_on_cylinder(point_p, 12, 0.87/2, [0, 0, 12/2], colorDictP, modelBlueRange, modelRedRange))
         point_p = tuple(point_p)
         matchDict[point_p] = point_q
 
-def error(point_cloud_p, point_cloud_q, b, quat, matchDict, colorDictP, modelHuedRange): 
+def error(point_cloud_p, point_cloud_q, b, quat, matchDict, colorDictP, modelBlueRange, modelRedRange): 
     tot = 0
     quat_star = quat_conjugate(quat)
     for point_p in point_cloud_p:
         point_p = tuple(point_p)
         # point_q = matchDict[point_p]
-        point_q = closest_point_on_cylinder(point_p, 12, .435, [0, 0, 12/2], colorDictP, modelHuedRange)
+        point_q = closest_point_on_cylinder(point_p, 12, .435, [0, 0, 12/2], colorDictP, modelBlueRange, modelRedRange)
         Rp_i_left = quat_mult(quat, point_p)
         Rp_i_right = quat_mult(Rp_i_left, quat_star)
         Rp_i = Rp_i_right
@@ -247,6 +270,11 @@ def error(point_cloud_p, point_cloud_q, b, quat, matchDict, colorDictP, modelHue
         curr = [Rp_i[0] + b[0] - point_q[0], Rp_i[1] + b[1] - point_q[1], Rp_i[2] + b[2] - point_q[2]]
         norm_squared = (math.sqrt(curr[0]**2 + curr[1]**2 + curr[2]**2))**2
         tot+=norm_squared
+        color_p = colorDictP[point_p]
+        # if color_match(color_p, (240/360, 1.0, 1.0)) and not (10.00 <= point_p[2] <= 12.00) :
+        #     tot+=1000
+        # if color_match(color_p, (0.0, 1.0, 1.0)) and not (0.00 <= point_p[2] <= 2.00) :
+        #     tot+=1000
     return tot
 
 def add_noise(point_cloud_p):
@@ -279,23 +307,30 @@ def generate_point_cloud_p(r, height, colorDict): #cylinder point cloud: r = rad
         x = random.uniform(-0.435, 0.435)
         sign_y = is_negative()
         y = (math.sqrt(r**2-x**2)) * sign_y
-        z = random.uniform(0, height)
+        if random.choice([True, False]):
+            z = random.uniform(0, 2.0)
+        else:
+            z = random.uniform(10.0, 12.0)
         point = [x,y,z]
         points.append(point)
     for point in points:
         if point[2] >= 10:
+            #blue hsv values
+            hue = 240/360
+            s = 1.0
+            v = 1.0
+            point_tup = tuple(point)
+            colorDict[point_tup] = (hue,s,v)
+        elif point[2] <= 2.0:
             #red hsv values
-            # hue = 177
-            # s = 170
-            # v = 230
             #values below are for purposes of plotting using ax.scatter
-            hue = 0
-            s = 1
-            v = 1
+            hue = 0.0
+            s = 1.0
+            v = 1.0
             point_tup = tuple(point)
             colorDict[point_tup] = (hue,s,v)
         else:
-            #wood hsv values
+            #wood hsv values --- should never be accessed
             hue = 17/360
             s = 125/255
             v = 210/255
@@ -326,10 +361,12 @@ def plot(point_cloud_p, colorDict):
     num_points = 1200
 
     # Define the colors for each half of the cylinder
-    color1 = (17/360, 125/255, 210/255) # HSV values for wood
+    colorWood = (17/360, 125/255, 210/255) # HSV values for wood
+    color1 = (240/360, 1.0, 1.0) #HSV values for blue
     color2 = (0.0, 1.0, 1.0) # HSV values for red
 
     # Convert HSV colors to RGB colors
+    colorWood_rgb = colorsys.hsv_to_rgb(colorWood[0], colorWood[1], colorWood[2])
     color1_rgb = colorsys.hsv_to_rgb(color1[0], color1[1], color1[2])
     color2_rgb = colorsys.hsv_to_rgb(color2[0], color2[1], color2[2])
 
@@ -341,13 +378,25 @@ def plot(point_cloud_p, colorDict):
     y = r*np.sin(theta)
     z, _ = np.meshgrid(z, theta)
 
+    bottom_height = 2 # inches
+    top_height = 10 # inches
+
     # Define the color values for each section of the cylinder surface
     facecolors = np.zeros((num_points, num_points, 4))
     for i in range(num_points):
-        if i < num_points - 200:
-            facecolors[:,i,:] = (*color1_rgb, 1)
-        else:
-            facecolors[:,i,:] = (*color2_rgb, 1)
+        # if i <= num_points - 200:
+        #     facecolors[:,i,:] = (*color1_rgb, 1)
+        # elif i <= num_points - 1000:
+        #     facecolors[:,i,:] = (*color2_rgb, 1)
+        # else:
+        #     facecolors[:,i,:] = (*colorWood_rgb, 1)
+            if i < num_points * bottom_height / 12:
+                facecolors[:,i,:] = (*color2_rgb, 1)
+            elif i < num_points * top_height / 12:
+                facecolors[:,i,:] = (*colorWood_rgb, 1)
+            else:
+                facecolors[:,i,:] = (*color1_rgb, 1)
+            
 
     # plot the points
     # ax.scatter(point_cloud_p_x, point_cloud_p_y, point_cloud_p_z, c='r', marker='o')
