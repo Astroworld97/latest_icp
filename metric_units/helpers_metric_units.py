@@ -304,24 +304,24 @@ def generate_point_cloud_p(r, height, colorDict): #cylinder point cloud: r = rad
 
     for i in range(num_points):
         point = []
-        x = random.uniform(-0.435, 0.435)
+        x = random.uniform(-11.049, 11.049)
         sign_y = is_negative()
         y = (math.sqrt(r**2-x**2)) * sign_y
         if random.choice([True, False]):
-            z = random.uniform(0, 2.0)
+            z = random.uniform(0, 50.8)
         else:
-            z = random.uniform(10.0, 12.0)
+            z = random.uniform(h-50.8, h)
         point = [x,y,z]
         points.append(point)
     for point in points:
-        if point[2] >= 10:
+        if point[2] >= h-50.8:
             #blue hsv values
             hue = 240/360
             s = 1.0
             v = 1.0
             point_tup = tuple(point)
             colorDict[point_tup] = (hue,s,v)
-        elif point[2] <= 2.0:
+        elif point[2] <= 50.8:
             #red hsv values
             #values below are for purposes of plotting using ax.scatter
             hue = 0.0
@@ -354,8 +354,8 @@ def plot(point_cloud_p, colorDict):
         point_color_arr.append(colorDict[tuple(point_p)])
 
     # Define the cylinder height and radius
-    h = 12
-    r = .87/2
+    h = 304.8#mm; equivalent to 12 inches
+    r = 11.049#mm; equivalent to 0.435in radius or 0.87in diameter
 
     # Define the number of points to use for the cylinder surface
     num_points = 1200
@@ -378,25 +378,18 @@ def plot(point_cloud_p, colorDict):
     y = r*np.sin(theta)
     z, _ = np.meshgrid(z, theta)
 
-    bottom_height = 2 # inches
-    top_height = 10 # inches
+    bottom_height = 50.8 #mm
+    top_height = h-50.8 #mm
 
     # Define the color values for each section of the cylinder surface
     facecolors = np.zeros((num_points, num_points, 4))
     for i in range(num_points):
-        # if i <= num_points - 200:
-        #     facecolors[:,i,:] = (*color1_rgb, 1)
-        # elif i <= num_points - 1000:
-        #     facecolors[:,i,:] = (*color2_rgb, 1)
-        # else:
-        #     facecolors[:,i,:] = (*colorWood_rgb, 1)
-            if i < num_points * bottom_height / 12:
-                facecolors[:,i,:] = (*color2_rgb, 1)
-            elif i < num_points * top_height / 12:
-                facecolors[:,i,:] = (*colorWood_rgb, 1)
-            else:
-                facecolors[:,i,:] = (*color1_rgb, 1)
-            
+        if i < num_points * bottom_height / 12:
+            facecolors[:,i,:] = (*color2_rgb, 1)
+        elif i < num_points * top_height / 12:
+            facecolors[:,i,:] = (*colorWood_rgb, 1)
+        else:
+            facecolors[:,i,:] = (*color1_rgb, 1)
 
     # plot the points
     # ax.scatter(point_cloud_p_x, point_cloud_p_y, point_cloud_p_z, c='r', marker='o')

@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from scipy.spatial.transform import Rotation
 from numpy.linalg import eig
-from helpers import *
+from helpers_metric_units import *
 import colorsys
 import hashlib
 import copy
@@ -16,15 +16,14 @@ maxIterations = 10000
 tolerance = 0.1
 matchDict = {}
 colorDictP = {}
-modelBlueRange = [10.00, 12.00] #section of analytical model with color tape
-modelRedRange = [0.00, 2.00] #section of analytical model that is wooden
 # Define the cylinder height and radius
-h = 12
-r = .435 #.87/2
+h = 304.8#mm; equivalent to 12 inches
+r = 11.049#mm; equivalent to 0.435in radius or 0.87in diameter
+modelBlueRange = [h-50.8, h] #section of analytical model with blue color tape; note that 50.8 mm is 2 inches
+modelRedRange = [0.00, 50.8] #section of analytical model that is red color tape; note that 50.8 mm is 2 inches
 
 #section 2: define arrays (aka point clouds) and initialize dictionaries
 point_cloud_q, colorDictP = np.array(generate_point_cloud_p(r, h, colorDictP))
-# print(point_cloud_q.type)
 point_cloud_p = point_cloud_q.copy()
 # colorDictP = txt_to_dict('exportDict.txt')
 point_cloud_p = list(colorDictP.keys())
