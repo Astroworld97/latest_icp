@@ -203,18 +203,6 @@ def createMatchDictionary(point_cloud_p, matchDict): #creates the match dictiona
     for point in point_cloud_p:
         matchDict[tuple(point)] = None
 
-# def get_cylpoint_color(cylpoint, modelHuedRange):
-#     if modelHuedRange[0] <= cylpoint[2] <= modelHuedRange[1]:
-#         return (0.0, 1.0, 1.0) #HSV values for red
-#     else:
-#         return (17/360, 125/255, 210/255) # HSV values for wood
-
-# def color_match(point_color, cylpoint_color):
-#     if point_color[0] == cylpoint_color[0] and point_color[1] == cylpoint_color[1] and point_color[2] == cylpoint_color[2]:
-#         return True
-#     else:
-#         return False
-
 def color_match(point_color, cylpoint_color):
     if abs(point_color[0] - cylpoint_color[0]) <= .1 and abs(point_color[1] - cylpoint_color[1]) <= .1 and abs(point_color[2] - cylpoint_color[2]) <= .1:
         return True
@@ -317,7 +305,7 @@ def is_negative():
 def generate_point_cloud_p(r, height, colorDict): #cylinder point cloud: r = radius; h = height
     # generate 100 points on the cylinder
     points = []
-    num_points = 50
+    num_points = 100
 
     for i in range(num_points):
         point = []

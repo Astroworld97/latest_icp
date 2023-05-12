@@ -13,15 +13,14 @@ import copy
 #main
 #section 1: define constants and data structures
 maxIterations = 10000
-tolerance = 0.1
+tolerance = 1
 matchDict = {}
 colorDictP = {}
 # Define the cylinder height and radius
-h = 304.8#mm; equivalent to 12 inches
-r = 11.049#mm; equivalent to 0.435in radius or 0.87in diameter
-modelBlueRange = [h-50.8, h] #section of analytical model with blue color tape; note that 50.8 mm is 2 inches
-modelRedRange = [0.00, 50.8] #section of analytical model that is red color tape; note that 50.8 mm is 2 inches
-
+h = 300 #mm; approximately equivalent to 12 inches (12 in = 304.8 mm)
+r = 21.9/2 #mm; Measured radius from diameter. Approximately equivalent to measured 0.435in radius or 0.87in diameter.
+modelBlueRange = [h-50, h] #section of analytical model with blue color tape; approximately equivalent to 2 inches (50.8 mm = 2 inches)
+modelRedRange = [0.00, 50] #section of analytical model that is red color tape; approximately equivalent to 2 inches (50.8 mm = 2 inches)
 #section 2: define arrays (aka point clouds) and initialize dictionaries
 point_cloud_q, colorDictP = np.array(generate_point_cloud_p(r, h, colorDictP))
 point_cloud_p = point_cloud_q.copy()
@@ -35,7 +34,7 @@ M = np.zeros((4, 4))
 b = 0
 quat = [0,0,0,0] #aka quat
 p_centroid = point_cloud_centroid(point_cloud_p)
-q_centroid = [0,0,6]
+q_centroid = [0,0,300/2]
 
 # #section 3: iterate (rotation)
 point_cloud_p_best = point_cloud_p
