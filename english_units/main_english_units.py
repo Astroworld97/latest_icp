@@ -12,8 +12,8 @@ import copy
 
 #main
 #section 1: define constants and data structures
-maxIterations = 1000
-tolerance = 0.1
+maxIterations = 10000
+tolerance = 0.01
 matchDict = {}
 colorDictP = {}
 # Define the cylinder height and radius
@@ -23,21 +23,21 @@ modelBlueRange = [h - 2.00, h] #section of analytical model with blue color tape
 modelRedRange = [0.00, 2.00] #section of analytical model with red color tape
 
 #section 2: define arrays (aka point clouds) and initialize dictionaries
-point_cloud_q, colorDictP = np.array(generate_point_cloud_p(r, h, colorDictP))
-point_cloud_p = point_cloud_q.copy()
-# colorDictP = txt_to_dict('english_units/exportDict0.txt')
-# point_cloud_p = list(colorDictP.keys())
-# plot(point_cloud_p, colorDictP)
-point_cloud_p, colorDictP = apply_initial_translation_and_rotation(point_cloud_p, colorDictP)
-point_cloud_p = add_noise(point_cloud_p, colorDictP)
+# point_cloud_q, colorDictP = np.array(generate_point_cloud_p(r, h, colorDictP))
+# point_cloud_p = point_cloud_q.copy()
+colorDictP = txt_to_dict('english_units/exportDict3.txt')
+point_cloud_p = list(colorDictP.keys())
 plot(point_cloud_p, colorDictP)
+# point_cloud_p, colorDictP = apply_initial_translation_and_rotation(point_cloud_p, colorDictP)
+# point_cloud_p = add_noise(point_cloud_p, colorDictP)
+# plot(point_cloud_p, colorDictP)
 M = np.zeros((4, 4)) 
 b = 0
 quat = [0,0,0,0] #aka quat
 
 p_centroid = point_cloud_centroid(point_cloud_p)
-q_centroid = point_cloud_centroid(point_cloud_q)
-# q_centroid = [0,0,6]
+# q_centroid = point_cloud_centroid(point_cloud_q)
+q_centroid = [0,0,6]
 
 # centroid_diff = [q_centroid[0]-p_centroid[0], q_centroid[1]-p_centroid[1], q_centroid[2]-p_centroid[2]]
 

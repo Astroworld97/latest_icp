@@ -13,11 +13,16 @@ import ast
 
 def create_random_quat():
     # random.seed(22)
-    real_component = random.randint(1, 10)
-    i_hat = random.randint(1, 10)
-    j_hat = random.randint(1, 10)
-    k_hat = random.randint(1, 10)
+    real_component = random.random()
+    i_hat = random.random()
+    j_hat = random.random()
+    k_hat = random.random()
     return [real_component, i_hat, j_hat, k_hat]
+    # real_component = random.randint(1, 10)
+    # i_hat = random.randint(1, 10)
+    # j_hat = random.randint(1, 10)
+    # k_hat = random.randint(1, 10)
+    # return [real_component, i_hat, j_hat, k_hat]
     # return [-0.7240972, 0, 0, -0.6896979] #234 deg rotation about z 
     # return [0.707, 0, 0.707, 0] #90 deg rotation about y 
     # return [0.707, 0, 0.707, 0] #90 deg rotation about y 
@@ -28,13 +33,6 @@ def create_random_translation_vector():
     i_hat = random.randint(1, 5)
     j_hat = random.randint(1, 5)
     k_hat = random.randint(1, 5)
-    return [i_hat, j_hat, k_hat]
-
-def create_random_centroid_vector():
-    random.seed(19)
-    i_hat = random.randint(1, 10)
-    j_hat = random.randint(1, 10)
-    k_hat = random.randint(1, 10)
     return [i_hat, j_hat, k_hat]
 
 def quat_norm(quat): #returns the norm of the quaternion
@@ -145,15 +143,6 @@ def point_cloud_centroid(point_cloud): #computes centroid/mean/center of mass of
     avg_z = sum_z/num_points
 
     return [avg_x, avg_y, avg_z]
-
-def create_point_cloud_q_from_matches(point_cloud_p, matchDict):
-    point_cloud_q = []
-    for i in range(len(point_cloud_p)):
-        point_p = point_cloud_p[i]
-        point_p = tuple(point_p)
-        point_q = matchDict[point_p]
-        point_cloud_q.append(point_q)
-    return point_cloud_q
     
 def calc_single_prime(point, centroid):
     prime_x = point[0] - centroid[0]
@@ -161,8 +150,10 @@ def calc_single_prime(point, centroid):
     prime_z = point[2] - centroid[2]
     return [prime_x, prime_y, prime_z]
 
-def calc_single_M(P_i, Q_i):
-    return np.matmul(P_i.T,Q_i)
+def calc_single_M(P, Q):
+    P_transpose = P.T
+    retval = np.matmul(P_transpose,Q)
+    return retval
 
 def calc_quat(M):
     eigenvalues,eigenvectors=eig(M)
@@ -170,9 +161,9 @@ def calc_quat(M):
     max_eigvec = eigenvectors[:, max_eigval_idx]
     return max_eigvec
 
-def calc_b(q_centroid, p_centroid, q, q_star):
-    first_mult = quat_mult(q, p_centroid)
-    second_mult = quat_mult(first_mult, q_star)
+def calc_b(q_centroid, p_centroid, quat, quat_star):
+    first_mult = quat_mult(quat, p_centroid)
+    second_mult = quat_mult(first_mult, quat_star)
     vect = [second_mult[1], second_mult[2], second_mult[3]]
     retval = [q_centroid[0]-vect[0], q_centroid[1]-vect[1], q_centroid[2]-vect[2]]
     return retval
@@ -181,12 +172,6 @@ def createMatchDictionary(point_cloud_p, matchDict): #creates the match dictiona
     matchDict.clear()
     for point in point_cloud_p:
         matchDict[tuple(point)] = None
-
-def get_cylpoint_color(cylpoint, modelHuedRange):
-    if modelHuedRange[0] <= cylpoint[2] <= modelHuedRange[1]:
-        return (0.0, 1.0, 1.0) #HSV values for red
-    else:
-        return (17/360, 125/255, 210/255) # HSV values for wood
 
 def color_match(point_color, cylpoint_color):
     if abs(point_color[0] - cylpoint_color[0]) <= .1 and abs(point_color[1] - cylpoint_color[1]) <= .1 and abs(point_color[2] - cylpoint_color[2]) <= .1:
@@ -265,25 +250,23 @@ def error(point_cloud_p, point_cloud_q, b, quat, matchDict, colorDictP, modelBlu
         norm_squared = (math.sqrt(curr[0]**2 + curr[1]**2 + curr[2]**2))**2
         tot+=norm_squared
         color_p = colorDictP[point_p]
-        # if color_match(color_p, (240/360, 1.0, 1.0)) and not (10.00 <= point_p[2] <= 12.00) :
-        #     tot+=1000
-        # if color_match(color_p, (0.0, 1.0, 1.0)) and not (0.00 <= point_p[2] <= 2.00) :
-        #     tot+=1000
     return tot
 
-def add_noise(point_cloud_p):
+def add_noise(point_cloud_p, colorDictP):
     for i, point_p in enumerate(point_cloud_p):
-        #The first argument to numpy.random.normal is the mean of the distribution (in this case, 0), the second argument is the standard deviation (in this case, 1), and the third argument is the size of the output array (in this case, 1).
-        upper = 0.3
-        noise_x = np.random.normal(0,upper,1)
-        noise_y = np.random.normal(0,upper,1)
-        noise_z = np.random.normal(0,upper,1)
+        point_color = colorDictP[tuple(point_p)]
+        colorDictP[tuple(point_p)] = ()
+        noise_x = random.uniform(0, .1)
+        noise_y = random.uniform(0, .1)
+        noise_z = random.uniform(0, .1)
         point_p_x = point_p[0] + noise_x
         point_p_y = point_p[1] + noise_y
         point_p_z = point_p[2] + noise_z
         point_cloud_p[i][0] = point_p_x
         point_cloud_p[i][1] = point_p_y
         point_cloud_p[i][2] = point_p_z
+        point_p = [point_p_x, point_p_y, point_p_z]
+        colorDictP[tuple(point_p)] = point_color
     return point_cloud_p
 
 def is_negative():
