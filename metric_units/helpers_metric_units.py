@@ -241,7 +241,7 @@ def closest_point_on_cylinder(point, height, rad, origin, colorDictP, modelBlueR
             z = height-50
     return [x,y,z]
 
-def match(point_cloud_p, matchDict, q, it, q_centroid, colorDictP, modelBlueRange, modelRedRange): #matches each of the points in one array to its closest corresponding point in the other array
+def match(point_cloud_p, matchDict, it, q_centroid, colorDictP, modelBlueRange, modelRedRange): #matches each of the points in one array to its closest corresponding point in the other array
     if it>0:
             matchDict.clear()
     for i, point_p in enumerate(point_cloud_p):

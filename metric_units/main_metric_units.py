@@ -41,7 +41,7 @@ point_cloud_p_best = point_cloud_p
 best_err = 10000000
 for i in range(maxIterations):
 
-    match(point_cloud_p, matchDict, quat, i, q_centroid, colorDictP, modelBlueRange, modelRedRange) #fill the matchDict with the current matches
+    match(point_cloud_p, matchDict, i, q_centroid, colorDictP, modelBlueRange, modelRedRange) #fill the matchDict with the current matches
 
     if(i>0): #only check for error after the 0th loop
         err = error(point_cloud_p, point_cloud_q, b, quat, matchDict, colorDictP, modelBlueRange, modelRedRange)

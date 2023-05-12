@@ -111,3 +111,54 @@ for i in range(0,len(p)-1):
     expected = results[i]["mult"]
     if actual != expected:
         print("mult: " + str(actual) + " != " + str(expected))
+
+height = 12
+rad = .435 #.87/2
+origin = [0,0,height/2]
+
+modelBlueRange = [height - 2, height] #section of analytical model with blue color tape
+modelRedRange = [0.00, 2.00] #section of analytical model with red color tape
+
+colorDictP = {
+    (.435, 0, 0) : (0, 1, 1), #red at (.435, 0, 0)
+    (.435, 0, 12) : (240/360, 1, 1), #blue at (.435, 0, 12)
+    (100,100,100) : (0,1,1), #red at (100,100,100)
+    (-10, 13, -2) : (240/360, 1, 1) #blue at (-10, 13, -2)
+}
+
+print(closest_point_on_cylinder((.435, 0, 0), height, rad, origin, colorDictP, modelBlueRange, modelRedRange)) #expected: (.435, 0, 0)
+print(closest_point_on_cylinder((.435, 0, 12), height, rad, origin, colorDictP, modelBlueRange, modelRedRange)) #expected: (.435, 0, 12)
+print(closest_point_on_cylinder((100,100,100), height, rad, origin, colorDictP, modelBlueRange, modelRedRange)) #expected: (0.308,0.308,2)
+print(closest_point_on_cylinder((-10, 13, -2), height, rad, origin, colorDictP, modelBlueRange, modelRedRange)) #expected: (-0.265,0.345,10)
+
+print(color_match((240/360, 1, 1), (0,1,1))) #expected: False
+print(color_match((0,1,1), (0,1,1))) #expected: True
+print(color_match((240/360, 1, 1), (240/360, 1, 1))) #expected: True
+
+centroid = [0,0,6]
+
+print(calc_single_prime((10,13,30), centroid)) #expected: (10,13,24)
+print(calc_single_prime((99,99,99), centroid)) #expected: (99,99,93)
+print(calc_single_prime((1,-1,6), centroid)) #expected: (1,-1,0)
+
+# print(create_prime_matrix_p((10,13,24)))
+# print(create_prime_matrix_p((99,99,93)))
+# print(create_prime_matrix_p((1,-1,0)))
+
+# print(create_prime_matrix_q((10,13,24)))
+# print(create_prime_matrix_q((99,99,93)))
+# print(create_prime_matrix_q((1,-1,0)))
+
+# P = create_prime_matrix_p((10,13,24))
+# Q = create_prime_matrix_q((99,99,93))
+# print(calc_single_M(P, Q))
+
+q_centroid = [0,0,6]
+p_centroid = [10,10,10]
+quat = [-3, 3, 9, 15]
+quat_star = quat_conjugate(quat)
+print(calc_b(q_centroid, p_centroid, quat, quat_star))
+
+# M = create_prime_matrix_p((10,13,24))
+# print(calc_quat(M))
+

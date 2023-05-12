@@ -237,3 +237,21 @@
 #         return True
 #     else:
 #         return False
+
+# def create_point_cloud_q_from_matches(point_cloud_p, matchDict):
+#     point_cloud_q = []
+#     for i in range(len(point_cloud_p)):
+#         point_p = point_cloud_p[i]
+#         point_p = tuple(point_p)
+#         point_q = matchDict[point_p]
+#         point_cloud_q.append(point_q)
+#     return point_cloud_q
+
+# point_cloud_p, colorDictP = flip_180(point_cloud_p, colorDictP, h)
+
+# def create_random_centroid_vector():
+#     random.seed(19)
+#     i_hat = random.randint(1, 10)
+#     j_hat = random.randint(1, 10)
+#     k_hat = random.randint(1, 10)
+#     return [i_hat, j_hat, k_hat]
